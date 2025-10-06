@@ -1,8 +1,9 @@
+// stock-adjustment-form.tsx
 "use client"
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react" // Tambah useEffect untuk reset
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,7 +27,7 @@ interface StockAdjustmentFormProps {
   onOpenChange: (open: boolean) => void
   onSave: (adjustment: {
     productId: string
-    type: "add" | "remove"
+    adjustmentType: "in" | "out" // Ubah 'type' menjadi 'adjustmentType' dan valuenya menjadi 'in'/'out' agar konsisten dengan logika sebelumnya
     quantity: number
     reason: string
     notes?: string
@@ -34,8 +35,21 @@ interface StockAdjustmentFormProps {
 }
 
 const adjustmentReasons = {
-  add: ["New Stock Received", "Stock Return", "Inventory Correction", "Transfer In", "Other"],
-  remove: ["Expired Product", "Damaged Product", "Stock Transfer", "Inventory Correction", "Theft/Loss", "Other"],
+  in: [
+    "Penerimaan Stok Baru", 
+    "Pengembalian Stok", 
+    "Koreksi Inventaris", 
+    "Transfer Masuk", 
+    "Lainnya"
+  ],
+  out: [
+    "Produk Kedaluwarsa", 
+    "Produk Rusak", 
+    "Transfer Stok Keluar", 
+    "Koreksi Inventaris", 
+    "Pencurian/Kehilangan", 
+    "Lainnya"
+  ],
 }
 
 export function StockAdjustmentForm({
@@ -46,31 +60,39 @@ export function StockAdjustmentForm({
   onOpenChange,
   onSave,
 }: StockAdjustmentFormProps) {
-  const [adjustmentType, setAdjustmentType] = useState<"add" | "remove">("add")
+  // Ubah 'add'/'remove' menjadi 'in'/'out' agar lebih sesuai dengan konteks inventaris
+  const [adjustmentType, setAdjustmentType] = useState<"in" | "out">("in") 
   const [quantity, setQuantity] = useState(0)
   const [reason, setReason] = useState("")
   const [notes, setNotes] = useState("")
 
+  // PENTING: Reset state lokal saat dialog dibuka/ditutup (setelah operasi)
+  useEffect(() => {
+    if (open) {
+        setAdjustmentType("in");
+        setQuantity(0);
+        setReason("");
+        setNotes("");
+    }
+  }, [open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!productId || quantity <= 0) return
+    if (!productId || quantity <= 0 || !reason) return // Tambahkan validasi reason
 
     onSave({
       productId,
-      type: adjustmentType,
+      adjustmentType, // Menggunakan adjustmentType ('in'/'out')
       quantity,
       reason,
       notes,
     })
 
-    // Reset form
-    setQuantity(0)
-    setReason("")
-    setNotes("")
-    onOpenChange(false)
+    // onOpenChange(false) dipanggil setelah onSave di ProductsPage
   }
 
-  const newStock = adjustmentType === "add" ? currentStock + quantity : Math.max(0, currentStock - quantity)
+  // Hitung perkiraan stok baru
+  const newStock = adjustmentType === "in" ? currentStock + quantity : Math.max(0, currentStock - quantity)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,73 +100,74 @@ export function StockAdjustmentForm({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Stock Adjustment
+            Penyesuaian Stok
           </DialogTitle>
           <DialogDescription>
-            Adjust stock levels for <strong>{productName}</strong>
+            Sesuaikan level stok untuk <strong>{productName}</strong>
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Current Stock Display */}
+          {/* Tampilan Stok Saat Ini */}
           <div className="p-4 bg-muted rounded-lg">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Current Stock:</span>
-              <span className="font-medium">{currentStock} units</span>
+              <span className="text-sm text-muted-foreground">Stok Saat Ini:</span>
+              <span className="font-medium">{currentStock} unit</span>
             </div>
             <div className="flex justify-between items-center mt-2">
-              <span className="text-sm text-muted-foreground">New Stock:</span>
-              <span className="font-medium text-primary">{newStock} units</span>
+              <span className="text-sm text-muted-foreground">Stok Baru:</span>
+              <span className="font-medium text-primary">{newStock} unit</span>
             </div>
           </div>
 
-          {/* Adjustment Type */}
+          {/* Jenis Penyesuaian */}
           <div className="space-y-2">
-            <Label>Adjustment Type</Label>
+            <Label>Jenis Penyesuaian</Label>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
-                variant={adjustmentType === "add" ? "default" : "outline"}
-                onClick={() => setAdjustmentType("add")}
+                variant={adjustmentType === "in" ? "default" : "outline"}
+                onClick={() => setAdjustmentType("in")}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Stock
+                Tambah Stok
               </Button>
               <Button
                 type="button"
-                variant={adjustmentType === "remove" ? "default" : "outline"}
-                onClick={() => setAdjustmentType("remove")}
+                variant={adjustmentType === "out" ? "default" : "outline"}
+                onClick={() => setAdjustmentType("out")}
                 className="flex items-center gap-2"
               >
                 <Minus className="h-4 w-4" />
-                Remove Stock
+                Kurangi Stok
               </Button>
             </div>
           </div>
 
-          {/* Quantity */}
+          {/* Kuantitas */}
           <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity *</Label>
+            <Label htmlFor="quantity">Kuantitas *</Label>
             <Input
               id="quantity"
               type="number"
               min="1"
               value={quantity}
               onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 0)}
-              placeholder="Enter quantity"
+              placeholder="Masukkan kuantitas"
               required
             />
           </div>
 
-          {/* Reason */}
+          {/* Alasan */}
           <div className="space-y-2">
-            <Label htmlFor="reason">Reason *</Label>
+            <Label htmlFor="reason">Alasan *</Label>
             <Select value={reason} onValueChange={setReason} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select reason" />
+                <SelectValue placeholder="Pilih alasan" />
               </SelectTrigger>
               <SelectContent>
+                {/* Opsi alasan bergantung pada jenis penyesuaian */}
                 {adjustmentReasons[adjustmentType].map((reasonOption) => (
                   <SelectItem key={reasonOption} value={reasonOption}>
                     {reasonOption}
@@ -154,28 +177,29 @@ export function StockAdjustmentForm({
             </Select>
           </div>
 
-          {/* Notes */}
+          {/* Catatan */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="notes">Catatan (Opsional)</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes about this adjustment..."
+              placeholder="Catatan tambahan tentang penyesuaian ini..."
               rows={3}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              Batal
             </Button>
             <Button
               type="submit"
-              className={adjustmentType === "add" ? "" : "bg-destructive hover:bg-destructive/90"}
+              // Warna tombol disesuaikan: Hijau untuk tambah, Merah untuk kurangi
+              className={adjustmentType === "in" ? "" : "bg-destructive hover:bg-destructive/90"}
               disabled={!productId || quantity <= 0 || !reason}
             >
-              {adjustmentType === "add" ? "Add Stock" : "Remove Stock"}
+              {adjustmentType === "in" ? "Tambah Stok" : "Kurangi Stok"}
             </Button>
           </DialogFooter>
         </form>

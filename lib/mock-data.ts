@@ -1,11 +1,12 @@
 export const mockData = {
+  // Data Pengguna (Users)
   users: [
     {
       id: "1",
       email: "admin@pharmacy.com",
       password: "admin123",
       name: "Dr. Sarah Johnson",
-      role: "super_admin" as const,
+      role: "super_admin", // Peran super_admin
       branch_id: "1",
       avatar: "/placeholder.svg?height=40&width=40",
       created_at: "2024-01-01T00:00:00Z",
@@ -16,7 +17,7 @@ export const mockData = {
       email: "pharmacist@pharmacy.com",
       password: "pharma123",
       name: "Dr. Michael Chen",
-      role: "pharmacist" as const,
+      role: "pharmacist", // Peran apoteker
       branch_id: "1",
       avatar: "/placeholder.svg?height=40&width=40",
       created_at: "2024-01-01T00:00:00Z",
@@ -27,13 +28,15 @@ export const mockData = {
       email: "staff@pharmacy.com",
       password: "staff123",
       name: "Emma Rodriguez",
-      role: "staff" as const,
+      role: "staff", // Peran staf
       branch_id: "1",
       avatar: "/placeholder.svg?height=40&width=40",
       created_at: "2024-01-01T00:00:00Z",
       status: "active",
     },
   ],
+
+  // Data Cabang (Branches)
   branches: [
     {
       id: "1",
@@ -54,15 +57,17 @@ export const mockData = {
       created_at: "2024-01-01T00:00:00Z",
     },
   ],
+
+  // Data Produk (Products)
   products: [
     {
       id: "1",
       name: "Paracetamol 500mg",
       generic_name: "Acetaminophen",
       brand: "Tylenol",
-      category: "Pain Relief",
-      price: 12.99,
-      cost: 8.5,
+      category: "Pereda Nyeri", // Pain Relief
+      price: 15000,
+      cost: 9500,
       stock: 150,
       min_stock: 20,
       max_stock: 500,
@@ -78,11 +83,11 @@ export const mockData = {
       name: "Amoxicillin 250mg",
       generic_name: "Amoxicillin",
       brand: "Amoxil",
-      category: "Antibiotics",
-      price: 25.5,
-      cost: 18.0,
+      category: "Antibiotik", // Antibiotics
+      price: 35000,
+      cost: 24000,
       stock: 75,
-      min_stock: 15,
+      mIN_stock: 15,
       max_stock: 200,
       expiry_date: "2025-08-15",
       batch_number: "AMX002",
@@ -96,9 +101,9 @@ export const mockData = {
       name: "Vitamin D3 1000IU",
       generic_name: "Cholecalciferol",
       brand: "VitaHealth",
-      category: "Vitamins",
-      price: 18.75,
-      cost: 12.0,
+      category: "Vitamin", // Vitamins
+      price: 28000,
+      cost: 18000,
       stock: 200,
       min_stock: 30,
       max_stock: 300,
@@ -114,9 +119,9 @@ export const mockData = {
       name: "Ibuprofen 400mg",
       generic_name: "Ibuprofen",
       brand: "Advil",
-      category: "Pain Relief",
-      price: 15.99,
-      cost: 10.5,
+      category: "Pereda Nyeri", // Pain Relief
+      price: 18000,
+      cost: 12500,
       stock: 120,
       min_stock: 25,
       max_stock: 400,
@@ -132,13 +137,13 @@ export const mockData = {
       name: "Lisinopril 10mg",
       generic_name: "Lisinopril",
       brand: "Prinivil",
-      category: "Cardiovascular",
-      price: 32.5,
-      cost: 22.0,
-      stock: 8,
+      category: "Kardiovaskular", // Cardiovascular
+      price: 55000,
+      cost: 38000,
+      stock: 8, // Tetap rendah
       min_stock: 15,
       max_stock: 150,
-      expiry_date: "2025-06-30",
+      expiry_date: "2025-06-30", // Tanggal kedaluwarsa mendekati
       batch_number: "LIS005",
       supplier: "MediSupply",
       prescription_required: true,
@@ -146,6 +151,8 @@ export const mockData = {
       created_at: "2024-01-01T00:00:00Z",
     },
   ],
+
+  // Data Anggota/Pelanggan (Members)
   members: [
     {
       id: "1",
@@ -184,6 +191,8 @@ export const mockData = {
       created_at: "2024-01-01T00:00:00Z",
     },
   ],
+
+  // Data Transaksi (Transactions)
   transactions: [
     {
       id: "1",
@@ -208,6 +217,8 @@ export const mockData = {
       created_at: "2024-01-15T10:30:00Z",
     },
   ],
+
+  // Data Pra-Pesan (Pre-Orders)
   pre_orders: [
     {
       id: "1",

@@ -1,8 +1,7 @@
+// product-form.tsx
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,11 +15,15 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+// Hapus import: Calendar, Popover, PopoverContent, PopoverTrigger, CalendarIcon
+// Hapus import: format, cn
+
+// PENTING: Gunakan format tanggal standar untuk input type="date"
+// Helper function to format Date object to "YYYY-MM-DD" string
+const formatDateToInput = (date: Date): string => {
+    if (isNaN(date.getTime())) return "";
+    return date.toISOString().split('T')[0];
+};
 
 interface Product {
   id: string
@@ -33,7 +36,7 @@ interface Product {
   stock: number
   min_stock: number
   max_stock: number
-  expiry_date: string
+  expiry_date: string // Akan berupa string YYYY-MM-DD
   batch_number: string
   supplier: string
   prescription_required: boolean
@@ -49,22 +52,22 @@ interface ProductFormProps {
 }
 
 const categories = [
-  "Pain Relief",
-  "Antibiotics",
-  "Vitamins",
-  "Cardiovascular",
-  "Diabetes",
-  "Respiratory",
-  "Dermatology",
-  "Gastrointestinal",
-  "Mental Health",
-  "Other",
+  "Pereda Nyeri", 
+  "Antibiotik", 
+  "Vitamin", 
+  "Kardiovaskular", 
+  "Diabetes", 
+  "Pernapasan", 
+  "Dermatologi", 
+  "Gastrointestinal", 
+  "Kesehatan Mental", 
+  "Lainnya", 
 ]
 
 const suppliers = ["PharmaCorp", "MediSupply", "HealthPlus", "GlobalMed", "BioPharm", "MedDistributor"]
 
-export function ProductForm({ product, open, onOpenChange, onSave }: ProductFormProps) {
-  const [formData, setFormData] = useState({
+const getInitialFormData = (product?: Product | null) => ({
+    id: product?.id || undefined, 
     name: product?.name || "",
     generic_name: product?.generic_name || "",
     brand: product?.brand || "",
@@ -74,58 +77,90 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
     stock: product?.stock || 0,
     min_stock: product?.min_stock || 0,
     max_stock: product?.max_stock || 0,
-    expiry_date: product?.expiry_date ? new Date(product.expiry_date) : new Date(),
+    // PERUBAHAN KRUSIAL: Simpan tanggal sebagai string YYYY-MM-DD
+    expiry_date: product?.expiry_date || formatDateToInput(new Date()), 
     batch_number: product?.batch_number || "",
     supplier: product?.supplier || "",
     prescription_required: product?.prescription_required || false,
     status: product?.status || ("active" as const),
-  })
+});
+
+
+export function ProductForm({ product, open, onOpenChange, onSave }: ProductFormProps) {
+  const [formData, setFormData] = useState(getInitialFormData(product))
+
+  useEffect(() => {
+    if (open) {
+      // Muat data produk untuk edit, atau nilai kosong untuk tambah
+      setFormData(getInitialFormData(product))
+    } 
+  }, [open, product])
+  
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Simpan formData apa adanya, karena expiry_date sudah berupa string YYYY-MM-DD
     onSave({
       ...formData,
-      expiry_date: formData.expiry_date.toISOString().split("T")[0],
     })
-    onOpenChange(false)
   }
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    // Tangani input angka
+    if (["price", "cost", "stock", "min_stock", "max_stock"].includes(field)) {
+         setFormData((prev) => ({ ...prev, [field]: Number(value) || 0 }))
+    } else {
+        setFormData((prev) => ({ ...prev, [field]: value }))
+    }
   }
+
+  // Helper untuk input angka (diperbaiki agar lebih bersih)
+  const handleNumericInput = (field: keyof typeof formData, e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = field === 'price' || field === 'cost' 
+      ? Number.parseFloat(value) || 0
+      : Number.parseInt(value) || 0;
+      
+    setFormData((prev) => ({ ...prev, [field]: numValue }));
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{product ? "Edit Product" : "Add New Product"}</DialogTitle>
+          <DialogTitle>{product ? "Ubah Produk" : "Tambah Produk Baru"}</DialogTitle>
           <DialogDescription>
-            {product ? "Update product information and inventory details." : "Add a new product to your inventory."}
+            {product
+              ? "Perbarui informasi produk dan detail inventaris."
+              : "Tambahkan produk baru ke dalam inventaris Anda."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
+          {/* Informasi Dasar */}
+          {/* ... (Tidak Berubah) ... */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Basic Information</h3>
+            <h3 className="text-lg font-medium">Informasi Dasar</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Product Name *</Label>
+                <Label htmlFor="name">Nama Produk *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="e.g., Paracetamol 500mg"
+                  placeholder="Contoh: Paracetamol 500mg"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="generic_name">Generic Name *</Label>
+                <Label htmlFor="generic_name">Nama Generik *</Label>
                 <Input
                   id="generic_name"
                   value={formData.generic_name}
                   onChange={(e) => handleInputChange("generic_name", e.target.value)}
-                  placeholder="e.g., Acetaminophen"
+                  placeholder="Contoh: Acetaminophen"
                   required
                 />
               </div>
@@ -133,19 +168,19 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="brand">Brand</Label>
+                <Label htmlFor="brand">Merek</Label>
                 <Input
                   id="brand"
                   value={formData.brand}
                   onChange={(e) => handleInputChange("brand", e.target.value)}
-                  placeholder="e.g., Tylenol"
+                  placeholder="Contoh: Tylenol"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category">Kategori *</Label>
                 <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
@@ -159,30 +194,30 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
             </div>
           </div>
 
-          {/* Pricing */}
+          {/* Harga */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Pricing</h3>
+            <h3 className="text-lg font-medium">Harga</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cost">Cost Price *</Label>
+                <Label htmlFor="cost">Harga Pokok (Modal) *</Label>
                 <Input
                   id="cost"
                   type="number"
-                  step="0.01"
+                  step="any" // Ubah ke "any" agar bisa menerima float dengan mudah
                   value={formData.cost}
-                  onChange={(e) => handleInputChange("cost", Number.parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleNumericInput("cost", e)}
                   placeholder="0.00"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Selling Price *</Label>
+                <Label htmlFor="price">Harga Jual *</Label>
                 <Input
                   id="price"
                   type="number"
-                  step="0.01"
+                  step="any" // Ubah ke "any"
                   value={formData.price}
-                  onChange={(e) => handleInputChange("price", Number.parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleNumericInput("price", e)}
                   placeholder="0.00"
                   required
                 />
@@ -190,39 +225,40 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
             </div>
           </div>
 
-          {/* Inventory */}
+          {/* Inventaris */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Inventory</h3>
+            <h3 className="text-lg font-medium">Inventaris</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="stock">Current Stock *</Label>
+                <Label htmlFor="stock">Stok Saat Ini *</Label>
                 <Input
                   id="stock"
                   type="number"
                   value={formData.stock}
-                  onChange={(e) => handleInputChange("stock", Number.parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleNumericInput("stock", e)}
                   placeholder="0"
                   required
+                  disabled={!!product} 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="min_stock">Minimum Stock *</Label>
+                <Label htmlFor="min_stock">Stok Minimum *</Label>
                 <Input
                   id="min_stock"
                   type="number"
                   value={formData.min_stock}
-                  onChange={(e) => handleInputChange("min_stock", Number.parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleNumericInput("min_stock", e)}
                   placeholder="0"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="max_stock">Maximum Stock *</Label>
+                <Label htmlFor="max_stock">Stok Maksimum *</Label>
                 <Input
                   id="max_stock"
                   type="number"
                   value={formData.max_stock}
-                  onChange={(e) => handleInputChange("max_stock", Number.parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleNumericInput("max_stock", e)}
                   placeholder="0"
                   required
                 />
@@ -230,25 +266,25 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
             </div>
           </div>
 
-          {/* Additional Details */}
+          {/* Detail Tambahan */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Additional Details</h3>
+            <h3 className="text-lg font-medium">Detail Tambahan</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="batch_number">Batch Number *</Label>
+                <Label htmlFor="batch_number">Nomor Batch *</Label>
                 <Input
                   id="batch_number"
                   value={formData.batch_number}
                   onChange={(e) => handleInputChange("batch_number", e.target.value)}
-                  placeholder="e.g., PAR001"
+                  placeholder="Contoh: PAR001"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplier">Supplier *</Label>
+                <Label htmlFor="supplier">Pemasok *</Label>
                 <Select value={formData.supplier} onValueChange={(value) => handleInputChange("supplier", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
+                    <SelectValue placeholder="Pilih pemasok" />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.map((supplier) => (
@@ -263,29 +299,14 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Expiry Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.expiry_date && "text-muted-foreground",
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.expiry_date ? format(formData.expiry_date, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.expiry_date}
-                      onSelect={(date) => date && handleInputChange("expiry_date", date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label>Tanggal Kedaluwarsa *</Label>
+                {/* PERUBAHAN KRUSIAL: Menggunakan input type="date" natif */}
+                <Input
+                  type="date"
+                  value={formData.expiry_date}
+                  onChange={(e) => handleInputChange("expiry_date", e.target.value)}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -294,8 +315,8 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="active">Aktif</SelectItem>
+                    <SelectItem value="inactive">Non-aktif</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -307,16 +328,16 @@ export function ProductForm({ product, open, onOpenChange, onSave }: ProductForm
                 checked={formData.prescription_required}
                 onCheckedChange={(checked) => handleInputChange("prescription_required", checked)}
               />
-              <Label htmlFor="prescription_required">Prescription Required</Label>
+              <Label htmlFor="prescription_required">Memerlukan Resep</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              Batal
             </Button>
             <Button type="submit" className="">
-              {product ? "Update Product" : "Add Product"}
+              {product ? "Perbarui Produk" : "Tambah Produk"}
             </Button>
           </DialogFooter>
         </form>

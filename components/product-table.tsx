@@ -1,3 +1,4 @@
+// product-table.tsx
 "use client"
 
 import { useState } from "react"
@@ -5,14 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,8 +17,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Edit, Trash2, Package, AlertTriangle, CheckCircle } from "lucide-react"
-import { mockData } from "@/lib/mock-data"
+// Hapus imports DropdownMenu, DropdownMenuItem, dll.
+import { Edit, Trash2, Package, AlertTriangle, CheckCircle } from "lucide-react"
+// Hapus import mockData
 
 interface Product {
   id: string
@@ -47,12 +41,21 @@ interface Product {
 }
 
 interface ProductTableProps {
+  products: Product[] // Menerima data produk dari props
   onEditProduct: (product: Product) => void
   onAddStock: (productId: string) => void
+  onDeleteProduct: (productId: string) => void
 }
 
-export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
-  const [products] = useState<Product[]>(mockData.products as Product[])
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0, // Opsional: menghilangkan ,00
+  }).format(amount);
+};
+
+export function ProductTable({ products, onEditProduct, onAddStock, onDeleteProduct }: ProductTableProps) { 
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
 
@@ -67,38 +70,40 @@ export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
     return matchesSearch && matchesCategory
   })
 
+  // Terjemahkan status stok
   const getStockStatus = (product: Product) => {
     if (product.stock <= product.min_stock) {
-      return { status: "low", color: "bg-destructive/10 text-destructive", icon: AlertTriangle }
+      return { status: "rendah", color: "bg-destructive/10 text-destructive", icon: AlertTriangle }
     }
     if (product.stock >= product.max_stock) {
-      return { status: "high", color: "bg-warning/10 text-warning", icon: Package }
+      return { status: "tinggi", color: "bg-warning/10 text-warning", icon: Package }
     }
     return { status: "normal", color: "bg-success/10 text-success", icon: CheckCircle }
   }
 
+  // Terjemahkan status kedaluwarsa
   const getExpiryStatus = (expiryDate: string) => {
     const expiry = new Date(expiryDate)
     const now = new Date()
     const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
     if (daysUntilExpiry <= 30) {
-      return { status: "expiring", color: "bg-destructive/10 text-destructive" }
+      return { status: "segera kedaluwarsa", color: "bg-destructive/10 text-destructive" }
     }
     if (daysUntilExpiry <= 90) {
-      return { status: "warning", color: "bg-warning/10 text-warning" }
+      return { status: "peringatan", color: "bg-warning/10 text-warning" }
     }
-    return { status: "good", color: "bg-success/10 text-success" }
+    return { status: "baik", color: "bg-success/10 text-success" }
   }
 
   const categories = Array.from(new Set(products.map((p) => p.category)))
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
+      {/* Filter */}
       <div className="flex gap-4 items-center">
         <Input
-          placeholder="Search products..."
+          placeholder="Cari produk..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -108,7 +113,7 @@ export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
         >
-          <option value="all">All Categories</option>
+          <option value="all">Semua Kategori</option>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
@@ -117,18 +122,18 @@ export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
         </select>
       </div>
 
-      {/* Table */}
+      {/* Tabel */}
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Product</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Expiry</TableHead>
+              <TableHead>Produk</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Stok</TableHead>
+              <TableHead>Harga</TableHead>
+              <TableHead>Kedaluwarsa</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[150px] text-center">Aksi</TableHead> {/* Lebar disesuaikan */}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -155,17 +160,17 @@ export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
                     <div className="flex items-center gap-2">
                       <StockIcon className="h-4 w-4" />
                       <div>
-                        <div className="font-medium">{product.stock} units</div>
+                        <div className="font-medium">{product.stock} unit</div>
                         <div className="text-xs text-muted-foreground">
-                          Min: {product.min_stock} • Max: {product.max_stock}
+                          Min: {product.min_stock} • Maks: {product.max_stock}
                         </div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">${product.price}</div>
-                      <div className="text-xs text-muted-foreground">Cost: ${product.cost}</div>
+                      <div className="font-medium">{formatRupiah(product.price)}</div>
+                      <div className="text-xs text-muted-foreground">Biaya: {formatRupiah(product.cost)}</div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -176,53 +181,52 @@ export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
                       <Badge className={stockStatus.color}>{stockStatus.status}</Badge>
                       {product.prescription_required && (
                         <Badge variant="outline" className="text-xs">
-                          Rx
+                          Resep
                         </Badge>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => onEditProduct(product)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Product
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onAddStock(product.id)}>
-                          <Package className="mr-2 h-4 w-4" />
-                          Add Stock
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
+                  {/* BARIS AKSI BARU */}
+                  <TableCell className="w-[150px]">
+                    <div className="flex items-center space-x-1 justify-center">
+                      
+                      {/* 1. Edit Button */}
+                      <Button variant="ghost" size="icon" onClick={() => onEditProduct(product)} title="Ubah Produk">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+
+                      {/* 2. Add Stock Button */}
+                      <Button variant="ghost" size="icon" onClick={() => onAddStock(product.id)} title="Tambah Stok">
+                        <Package className="h-4 w-4" />
+                      </Button>
+
+                      {/* 3. Delete Button (wrapped in AlertDialog) */}
+                      <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Product
-                            </DropdownMenuItem>
+                            <Button variant="ghost" size="icon" title="Hapus Produk">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                              <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                                Anda yakin ingin menghapus **"{product.name}"**? Tindakan ini tidak dapat dibatalkan.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                Delete
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => onDeleteProduct(product.id)}
+                                className="bg-destructive text-white hover:bg-destructive/90"
+                              >
+                                Hapus
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+
+                    </div>
                   </TableCell>
                 </TableRow>
               )
@@ -232,7 +236,7 @@ export function ProductTable({ onEditProduct, onAddStock }: ProductTableProps) {
       </div>
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">No products found matching your criteria.</div>
+        <div className="text-center py-8 text-muted-foreground">Tidak ada produk yang ditemukan sesuai kriteria Anda.</div>
       )}
     </div>
   )

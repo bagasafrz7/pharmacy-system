@@ -18,6 +18,9 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, change, icon: Icon, description }: StatCardProps) {
+  // Terjemahan internal StatCard
+  const changeText = change?.type === "increase" ? "peningkatan" : "penurunan";
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -34,7 +37,7 @@ function StatCard({ title, value, change, icon: Icon, description }: StatCardPro
               <TrendingDown className="h-3 w-3 text-destructive" />
             )}
             <span className={`text-xs ${change.type === "increase" ? "text-success" : "text-destructive"}`}>
-              {change.value}% from last month
+              {change.value}% dari bulan lalu {/* ... from last month */}
             </span>
           </div>
         )}
@@ -47,43 +50,44 @@ function StatCard({ title, value, change, icon: Icon, description }: StatCardPro
 export function DashboardStats() {
   const { user } = useAuth()
 
-  // Mock data - in real app, this would come from API
+  // Data mock - dalam aplikasi nyata, ini akan datang dari API
+  // Terjemahkan semua label yang terlihat pengguna
   const stats = [
     {
-      title: "Total Products",
+      title: "Total Produk", // Total Products
       value: "1,247",
       change: { value: 12, type: "increase" as const },
       icon: Package,
-      description: "Active inventory items",
+      description: "Item inventaris aktif", // Active inventory items
     },
     {
-      title: "Today's Sales",
+      title: "Penjualan Hari Ini", // Today's Sales
       value: "$2,847",
       change: { value: 8, type: "increase" as const },
       icon: Receipt,
-      description: "Revenue from transactions",
+      description: "Pendapatan dari transaksi", // Revenue from transactions
     },
     {
-      title: "Active Members",
+      title: "Anggota Aktif", // Active Members
       value: "892",
       change: { value: 3, type: "increase" as const },
       icon: Users,
-      description: "Registered patients",
+      description: "Pasien terdaftar", // Registered patients
     },
     {
-      title: "Low Stock Items",
+      title: "Stok Barang Rendah", // Low Stock Items
       value: "23",
       change: { value: 15, type: "decrease" as const },
       icon: AlertTriangle,
-      description: "Items below minimum stock",
+      description: "Item di bawah stok minimum", // Items below minimum stock
     },
   ]
 
-  // Filter stats based on user role
+  // Filter statistik berdasarkan peran pengguna
   const filteredStats = stats.filter((stat) => {
     if (user?.role === "staff") {
-      // Staff can see sales and members, but not detailed inventory
-      return ["Today's Sales", "Active Members"].includes(stat.title)
+      // Staf dapat melihat penjualan dan anggota, tetapi tidak inventaris terperinci
+      return ["Penjualan Hari Ini", "Anggota Aktif"].includes(stat.title)
     }
     return true
   })

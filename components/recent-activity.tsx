@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDistanceToNow } from "date-fns"
+// Import locale Indonesia untuk format waktu
+import { id } from "date-fns/locale"
 
 interface Activity {
   id: string
@@ -19,11 +21,41 @@ interface Activity {
   status?: "completed" | "pending" | "cancelled"
 }
 
+// Fungsi pembantu untuk menerjemahkan tipe aktivitas
+function translateActivityTitle(type: Activity["type"]) {
+  switch (type) {
+    case "sale":
+      return "Transaksi Penjualan"
+    case "pre_order":
+      return "Pra-pesanan Dibuat"
+    case "prescription":
+      return "Resep Digital"
+    case "stock_update":
+      return "Stok Diperbarui"
+    default:
+      return "Aktivitas"
+  }
+}
+
+// Fungsi pembantu untuk menerjemahkan status
+function translateStatus(status: Activity["status"]) {
+  switch (status) {
+    case "completed":
+      return "Selesai"
+    case "pending":
+      return "Tertunda"
+    case "cancelled":
+      return "Dibatalkan"
+    default:
+      return "Tidak Diketahui"
+  }
+}
+
 const mockActivities: Activity[] = [
   {
     id: "1",
     type: "sale",
-    title: "Sale Transaction",
+    title: translateActivityTitle("sale"),
     description: "Paracetamol 500mg x2, Vitamin D3 x1",
     user: { name: "Emma Rodriguez" },
     timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
@@ -33,8 +65,8 @@ const mockActivities: Activity[] = [
   {
     id: "2",
     type: "pre_order",
-    title: "Pre-order Placed",
-    description: "Amoxicillin 250mg - Prescription required",
+    title: translateActivityTitle("pre_order"),
+    description: "Amoxicillin 250mg - Resep diperlukan", // Terjemahkan deskripsi
     user: { name: "John Smith" },
     timestamp: new Date(Date.now() - 1000 * 60 * 45), // 45 minutes ago
     status: "pending",
@@ -42,8 +74,8 @@ const mockActivities: Activity[] = [
   {
     id: "3",
     type: "prescription",
-    title: "Digital Prescription",
-    description: "Reviewed and approved prescription for patient",
+    title: translateActivityTitle("prescription"),
+    description: "Resep ditinjau dan disetujui untuk pasien", // Terjemahkan deskripsi
     user: { name: "Dr. Michael Chen" },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
     status: "completed",
@@ -51,8 +83,8 @@ const mockActivities: Activity[] = [
   {
     id: "4",
     type: "stock_update",
-    title: "Stock Updated",
-    description: "Received new shipment - 50 items added",
+    title: translateActivityTitle("stock_update"),
+    description: "Menerima kiriman baru - 50 item ditambahkan", // Terjemahkan deskripsi
     user: { name: "Dr. Sarah Johnson" },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
     status: "completed",
@@ -91,8 +123,8 @@ export function RecentActivity() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>Latest transactions and system updates</CardDescription>
+        <CardTitle>Aktivitas Terbaru</CardTitle> {/* Recent Activity */}
+        <CardDescription>Transaksi dan pembaruan sistem terkini</CardDescription> {/* Latest transactions and system updates */}
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -106,7 +138,8 @@ export function RecentActivity() {
                   <p className="text-sm font-medium text-foreground">{activity.title}</p>
                   {activity.status && (
                     <Badge variant="secondary" className={getStatusColor(activity.status)}>
-                      {activity.status}
+                      {/* Terjemahkan status */}
+                      {translateStatus(activity.status)}
                     </Badge>
                   )}
                 </div>
@@ -127,7 +160,8 @@ export function RecentActivity() {
                   <div className="flex items-center gap-2">
                     {activity.amount && <span className="text-xs font-medium text-success">${activity.amount}</span>}
                     <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                      {/* Format jarak waktu dengan locale Indonesia */}
+                      {formatDistanceToNow(activity.timestamp, { addSuffix: true, locale: id })}
                     </span>
                   </div>
                 </div>

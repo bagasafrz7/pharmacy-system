@@ -27,13 +27,13 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Search */}
+        {/* Pencarian */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search products, members..." className="pl-10 w-64" />
+          <Input placeholder="Cari produk, anggota..." className="pl-10 w-64" /> {/* Search products, members... */}
         </div>
 
-        {/* Notifications */}
+        {/* Notifikasi */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="relative">
@@ -42,32 +42,32 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuLabel>Notifikasi</DropdownMenuLabel> {/* Notifications */}
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <div className="space-y-1">
-                <p className="text-sm font-medium">Low Stock Alert</p>
-                <p className="text-xs text-muted-foreground">Amoxicillin 250mg is running low (15 units remaining)</p>
+                <p className="text-sm font-medium">Peringatan Stok Rendah</p> {/* Low Stock Alert */}
+                <p className="text-xs text-muted-foreground">Amoxicillin 250mg hampir habis (tersisa 15 unit)</p> {/* Amoxicillin 250mg is running low (15 units remaining) */}
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <div className="space-y-1">
-                <p className="text-sm font-medium">New Pre-order</p>
+                <p className="text-sm font-medium">Pra-pesanan Baru</p> {/* New Pre-order */}
                 <p className="text-xs text-muted-foreground">
-                  John Smith placed a pre-order for prescription medication
-                </p>
+                  John Smith membuat pra-pesanan untuk obat resep
+                </p> {/* John Smith placed a pre-order for prescription medication */}
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <div className="space-y-1">
-                <p className="text-sm font-medium">Expiry Warning</p>
-                <p className="text-xs text-muted-foreground">5 products will expire within 30 days</p>
+                <p className="text-sm font-medium">Peringatan Kedaluwarsa</p> {/* Expiry Warning */}
+                <p className="text-xs text-muted-foreground">5 produk akan kedaluwarsa dalam 30 hari</p> {/* 5 products will expire within 30 days */}
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Mobile menu */}
+        {/* Menu Seluler */}
         <Button variant="ghost" size="sm" className="md:hidden">
           <Menu className="h-4 w-4" />
         </Button>
