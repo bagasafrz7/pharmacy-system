@@ -1,3 +1,4 @@
+// page.tsx (pre-order)
 "use client"
 
 import { useState } from "react"
@@ -17,10 +18,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, MoreHorizontal, Eye, CheckCircle, XCircle, Clock, Search } from "lucide-react"
+import { Plus, MoreHorizontal, Eye, CheckCircle, XCircle, Clock, Search, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import { mockData } from "@/lib/mock-data"
 import { formatDistanceToNow } from "date-fns"
+import { id } from "date-fns/locale" // Import locale Indonesia
+
+// Fungsi Helper untuk format Rupiah
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
 
 interface PreOrder {
   id: string
@@ -46,8 +57,8 @@ export default function PreOrdersPage() {
   const [preOrders, setPreOrders] = useState<PreOrder[]>([
     ...mockData.pre_orders.map((order: any) => ({
       ...order,
-      member_name: mockData.members.find((m: any) => m.id === order.member_id)?.name || "Unknown",
-      priority: "normal",
+      member_name: mockData.members.find((m: any) => m.id === order.member_id)?.name || "Tidak Dikenal",
+      priority: order.priority || "normal",
     })),
   ])
   const [showPreOrderForm, setShowPreOrderForm] = useState(false)
@@ -58,15 +69,24 @@ export default function PreOrdersPage() {
   const handleCreatePreOrder = (orderData: any) => {
     const newOrder: PreOrder = {
       ...orderData,
-      member_name: mockData.members.find((m: any) => m.id === orderData.member_id)?.name || "Unknown",
+      member_name: mockData.members.find((m: any) => m.id === orderData.member_id)?.name || "Tidak Dikenal",
     }
     setPreOrders([newOrder, ...preOrders])
-    toast.success(`Pre-order ${orderData.order_number} created successfully!`)
+    setShowPreOrderForm(false)
+    toast.success(`Pre-order ${orderData.order_number} berhasil dibuat!`)
   }
 
   const handleStatusChange = (orderId: string, newStatus: PreOrder["status"]) => {
     setPreOrders(preOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
-    toast.success(`Order status updated to ${newStatus}`)
+    
+    let statusText = '';
+    switch(newStatus) {
+        case 'ready': statusText = 'Siap Diambil'; break;
+        case 'completed': statusText = 'Selesai'; break;
+        case 'cancelled': statusText = 'Dibatalkan'; break;
+        default: statusText = newStatus;
+    }
+    toast.success(`Status pesanan diperbarui menjadi ${statusText}`)
   }
 
   const filteredOrders = preOrders.filter((order) => {
@@ -96,6 +116,16 @@ export default function PreOrdersPage() {
     }
   }
 
+  const getStatusLabel = (status: PreOrder["status"]) => {
+      switch (status) {
+        case "pending": return "Menunggu";
+        case "ready": return "Siap";
+        case "completed": return "Selesai";
+        case "cancelled": return "Batal";
+        default: return status;
+      }
+  }
+
   const getPriorityColor = (priority: PreOrder["priority"]) => {
     switch (priority) {
       case "urgent":
@@ -105,6 +135,15 @@ export default function PreOrdersPage() {
       default:
         return "bg-muted text-muted-foreground"
     }
+  }
+  
+  const getPriorityLabel = (priority: PreOrder["priority"]) => {
+      switch (priority) {
+        case "normal": return "Normal";
+        case "urgent": return "Mendesak";
+        case "emergency": return "Darurat";
+        default: return priority;
+      }
   }
 
   const getStatusIcon = (status: PreOrder["status"]) => {
@@ -130,52 +169,52 @@ export default function PreOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader title="Pre-Orders" description="Manage prescription pre-orders and medication requests" />
+      <DashboardHeader title="Manajemen Pre-Order" description="Kelola pre-order resep dan permintaan obat lainnya" />
 
       <div className="px-6 space-y-6">
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Pesanan</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{totalOrders}</div>
-              <p className="text-xs text-muted-foreground">All pre-orders</p>
+              <p className="text-xs text-muted-foreground">Semua pre-order</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Menunggu</CardTitle>
               <Clock className="h-4 w-4 text-warning" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-warning">{pendingOrders}</div>
-              <p className="text-xs text-muted-foreground">Awaiting processing</p>
+              <p className="text-xs text-muted-foreground">Menunggu diproses</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ready</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Siap Diambil</CardTitle>
               <CheckCircle className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-success">{readyOrders}</div>
-              <p className="text-xs text-muted-foreground">Ready for pickup</p>
+              <p className="text-xs text-muted-foreground">Siap untuk diambil</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Urgent</CardTitle>
-              <XCircle className="h-4 w-4 text-destructive" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Darurat</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{urgentOrders}</div>
-              <p className="text-xs text-muted-foreground">High priority orders</p>
+              <p className="text-xs text-muted-foreground">Pesanan prioritas tinggi</p>
             </CardContent>
           </Card>
         </div>
@@ -185,12 +224,12 @@ export default function PreOrdersPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Pre-Order Management</CardTitle>
-                <CardDescription>Track and manage prescription pre-orders</CardDescription>
+                <CardTitle>Daftar Pre-Order</CardTitle>
+                <CardDescription>Lacak dan kelola pre-order resep</CardDescription>
               </div>
               <Button onClick={() => setShowPreOrderForm(true)} className="">
                 <Plus className="mr-2 h-4 w-4" />
-                New Pre-Order
+                Pre-Order Baru
               </Button>
             </div>
           </CardHeader>
@@ -200,7 +239,7 @@ export default function PreOrdersPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search orders..."
+                  placeholder="Cari pesanan..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -211,22 +250,22 @@ export default function PreOrdersPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="ready">Ready</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="pending">Menunggu</SelectItem>
+                  <SelectItem value="ready">Siap</SelectItem>
+                  <SelectItem value="completed">Selesai</SelectItem>
+                  <SelectItem value="cancelled">Batal</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Priority" />
+                  <SelectValue placeholder="Prioritas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="all">Semua Prioritas</SelectItem>
                   <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="emergency">Emergency</SelectItem>
+                  <SelectItem value="urgent">Mendesak</SelectItem>
+                  <SelectItem value="emergency">Darurat</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -236,14 +275,14 @@ export default function PreOrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Items</TableHead>
+                    <TableHead>No. Pesanan</TableHead>
+                    <TableHead>Pasien</TableHead>
+                    <TableHead>Item</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead>Pickup Date</TableHead>
-                    <TableHead>Priority</TableHead>
+                    <TableHead>Tgl. Ambil</TableHead>
+                    <TableHead>Prioritas</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Dibuat</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -262,14 +301,14 @@ export default function PreOrdersPage() {
                             <p className="font-medium">{order.member_name}</p>
                             {hasPrescriptionItems && (
                               <Badge variant="outline" className="text-xs mt-1">
-                                Rx Required
+                                Resep Diperlukan
                               </Badge>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{order.items.length} items</p>
+                            <p className="font-medium">{order.items.length} item</p>
                             <p className="text-xs text-muted-foreground">
                               {order.items
                                 .slice(0, 2)
@@ -280,23 +319,23 @@ export default function PreOrdersPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="font-medium">${order.total.toFixed(2)}</span>
+                          <span className="font-medium">{formatRupiah(order.total)}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">{new Date(order.pickup_date).toLocaleDateString()}</span>
+                          <span className="text-sm">{new Date(order.pickup_date).toLocaleDateString('id-ID')}</span>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getPriorityColor(order.priority)}>{order.priority}</Badge>
+                          <Badge className={getPriorityColor(order.priority)}>{getPriorityLabel(order.priority)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <StatusIcon className="h-4 w-4" />
-                            <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                            <Badge className={getStatusColor(order.status)}>{getStatusLabel(order.status)}</Badge>
                           </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: id })}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -307,23 +346,23 @@ export default function PreOrdersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuLabel>Tindakan</DropdownMenuLabel>
                               <DropdownMenuItem>
                                 <Eye className="mr-2 h-4 w-4" />
-                                View Details
+                                Lihat Detail
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleStatusChange(order.id, "ready")}>
                                 <CheckCircle className="mr-2 h-4 w-4" />
-                                Mark Ready
+                                Tandai Siap
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(order.id, "completed")}>
                                 <CheckCircle className="mr-2 h-4 w-4" />
-                                Mark Completed
+                                Tandai Selesai
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(order.id, "cancelled")}>
                                 <XCircle className="mr-2 h-4 w-4" />
-                                Cancel Order
+                                Batalkan Pesanan
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -336,7 +375,7 @@ export default function PreOrdersPage() {
             </div>
 
             {filteredOrders.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">No pre-orders found matching your criteria.</div>
+              <div className="text-center py-8 text-muted-foreground">Tidak ada pre-order yang cocok dengan kriteria Anda.</div>
             )}
           </CardContent>
         </Card>

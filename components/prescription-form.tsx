@@ -1,8 +1,9 @@
+// presciption-form.tsx
 "use client"
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,12 +19,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, FileText, User, Stethoscope, Upload } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+// Hapus imports Calendar, Popover, CalendarIcon, format, cn
+import { FileText, User, Stethoscope, Upload, Minus, Plus } from "lucide-react"
 import { mockData } from "@/lib/mock-data"
+
+// Helper function to format Date object to "YYYY-MM-DD" string
+const formatDateToInput = (date: Date): string => {
+    if (isNaN(date.getTime())) return "";
+    return date.toISOString().split('T')[0];
+};
 
 interface Member {
   id: string
@@ -40,29 +44,58 @@ interface PrescriptionFormProps {
   onSubmit: (prescriptionData: any) => void
 }
 
+const frequencyOptions = [
+  { value: "once_daily", label: "Sekali sehari" },
+  { value: "twice_daily", label: "Dua kali sehari" },
+  { value: "three_times_daily", label: "Tiga kali sehari" },
+  { value: "four_times_daily", label: "Empat kali sehari" },
+  { value: "as_needed", label: "Sesuai kebutuhan" },
+]
+
+// State Awal untuk reset form
+const getInitialMedicationState = () => ([
+    {
+        id: 1,
+        name: "",
+        dosage: "",
+        frequency: "",
+        duration: "",
+        quantity: "",
+        instructions: "",
+    },
+]);
+
+
 export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionFormProps) {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [memberSearch, setMemberSearch] = useState("")
   const [doctorName, setDoctorName] = useState("")
   const [doctorLicense, setDoctorLicense] = useState("")
-  const [medications, setMedications] = useState([
-    {
-      id: 1,
-      name: "",
-      dosage: "",
-      frequency: "",
-      duration: "",
-      quantity: "",
-      instructions: "",
-    },
-  ])
+  const [medications, setMedications] = useState(getInitialMedicationState())
   const [diagnosis, setDiagnosis] = useState("")
-  const [prescriptionDate, setPrescriptionDate] = useState<Date>(new Date())
-  const [validUntil, setValidUntil] = useState<Date>()
+  const [prescriptionDate, setPrescriptionDate] = useState<string>(formatDateToInput(new Date()))
+  const [validUntil, setValidUntil] = useState<string>("") // Menggunakan string untuk input natif
   const [notes, setNotes] = useState("")
   const [prescriptionImage, setPrescriptionImage] = useState<File | null>(null)
 
   const members = mockData.members as Member[]
+
+  // Reset Form saat ditutup/dibuka
+  useEffect(() => {
+    if (!open) {
+      setSelectedMember(null)
+      setMemberSearch("")
+      setDoctorName("")
+      setDoctorLicense("")
+      setMedications(getInitialMedicationState())
+      setDiagnosis("")
+      setPrescriptionDate(formatDateToInput(new Date()))
+      setValidUntil("")
+      setNotes("")
+      setPrescriptionImage(null)
+    }
+  }, [open]);
+
 
   const filteredMembers = members.filter(
     (member) =>
@@ -115,8 +148,8 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
       doctor_license: doctorLicense,
       medications: medications.filter((med) => med.name.trim() !== ""),
       diagnosis,
-      prescription_date: format(prescriptionDate, "yyyy-MM-dd"),
-      valid_until: validUntil ? format(validUntil, "yyyy-MM-dd") : null,
+      prescription_date: prescriptionDate, // String YYYY-MM-DD
+      valid_until: validUntil || null,      // String YYYY-MM-DD atau null
       notes,
       status: "pending_review",
       created_at: new Date().toISOString(),
@@ -125,48 +158,27 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
 
     onSubmit(prescriptionData)
 
-    // Reset form
-    setSelectedMember(null)
-    setMemberSearch("")
-    setDoctorName("")
-    setDoctorLicense("")
-    setMedications([
-      {
-        id: 1,
-        name: "",
-        dosage: "",
-        frequency: "",
-        duration: "",
-        quantity: "",
-        instructions: "",
-      },
-    ])
-    setDiagnosis("")
-    setPrescriptionDate(new Date())
-    setValidUntil(undefined)
-    setNotes("")
-    setPrescriptionImage(null)
-    onOpenChange(false)
+    // Reset form dipanggil oleh useEffect setelah onSubmit
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange} size>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Digital Prescription Entry
+            Input Resep Digital
           </DialogTitle>
-          <DialogDescription>Enter prescription details for pharmacist review and approval</DialogDescription>
+          <DialogDescription>Masukkan detail resep untuk ditinjau dan disetujui apoteker</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Patient Selection */}
+          {/* Pemilihan Pasien */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Patient Information
+                Informasi Pasien *
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -179,7 +191,7 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                       <p className="text-sm text-muted-foreground">{selectedMember.phone}</p>
                       {selectedMember.allergies.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
-                          <span className="text-xs text-muted-foreground">Allergies:</span>
+                          <span className="text-xs text-muted-foreground">Alergi:</span>
                           {selectedMember.allergies.map((allergy) => (
                             <Badge key={allergy} variant="destructive" className="text-xs">
                               {allergy}
@@ -189,7 +201,7 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                       )}
                       {selectedMember.medical_conditions.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                          <span className="text-xs text-muted-foreground">Conditions:</span>
+                          <span className="text-xs text-muted-foreground">Kondisi Medis:</span>
                           {selectedMember.medical_conditions.map((condition) => (
                             <Badge key={condition} variant="secondary" className="text-xs">
                               {condition}
@@ -199,14 +211,14 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                       )}
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setSelectedMember(null)}>
-                      Change
+                      Ganti
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <Input
-                    placeholder="Search patients by name, email, or phone..."
+                    placeholder="Cari pasien berdasarkan nama, email, atau telepon..."
                     value={memberSearch}
                     onChange={(e) => setMemberSearch(e.target.value)}
                   />
@@ -229,33 +241,33 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
             </CardContent>
           </Card>
 
-          {/* Doctor Information */}
+          {/* Informasi Dokter */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Stethoscope className="h-4 w-4" />
-                Prescribing Doctor
+                Dokter Pemberi Resep *
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="doctor_name">Doctor Name *</Label>
+                  <Label htmlFor="doctor_name">Nama Dokter *</Label>
                   <Input
                     id="doctor_name"
                     value={doctorName}
                     onChange={(e) => setDoctorName(e.target.value)}
-                    placeholder="Dr. John Smith"
+                    placeholder="Contoh: Dr. Rina Kusuma"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="doctor_license">Medical License Number *</Label>
+                  <Label htmlFor="doctor_license">Nomor Izin Praktik *</Label>
                   <Input
                     id="doctor_license"
                     value={doctorLicense}
                     onChange={(e) => setDoctorLicense(e.target.value)}
-                    placeholder="MD123456789"
+                    placeholder="Contoh: SIP 123456789"
                     required
                   />
                 </div>
@@ -263,17 +275,17 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
             </CardContent>
           </Card>
 
-          {/* Medications */}
+          {/* Obat yang Diresepkan */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Prescribed Medications</CardTitle>
+              <CardTitle className="text-base">Obat yang Diresepkan</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {medications.map((medication, index) => (
                   <div key={medication.id} className="p-4 border rounded-lg space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Medication {index + 1}</h4>
+                      <h4 className="font-medium">Obat {index + 1}</h4>
                       {medications.length > 1 && (
                         <Button
                           type="button"
@@ -282,27 +294,27 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                           onClick={() => removeMedication(medication.id)}
                           className="text-destructive"
                         >
-                          Remove
+                          <Minus className="h-4 w-4 mr-1" /> Hapus
                         </Button>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label>Medication Name *</Label>
+                        <Label>Nama Obat *</Label>
                         <Input
                           value={medication.name}
                           onChange={(e) => updateMedication(medication.id, "name", e.target.value)}
-                          placeholder="e.g., Amoxicillin"
+                          placeholder="Contoh: Amoxicillin"
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Dosage *</Label>
+                        <Label>Dosis *</Label>
                         <Input
                           value={medication.dosage}
                           onChange={(e) => updateMedication(medication.id, "dosage", e.target.value)}
-                          placeholder="e.g., 500mg"
+                          placeholder="Contoh: 500mg"
                           required
                         />
                       </div>
@@ -310,47 +322,45 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
 
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-2">
-                        <Label>Frequency *</Label>
+                        <Label>Frekuensi *</Label>
                         <Select
                           value={medication.frequency}
                           onValueChange={(value) => updateMedication(medication.id, "frequency", value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
+                            <SelectValue placeholder="Pilih frekuensi" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="once_daily">Once daily</SelectItem>
-                            <SelectItem value="twice_daily">Twice daily</SelectItem>
-                            <SelectItem value="three_times_daily">Three times daily</SelectItem>
-                            <SelectItem value="four_times_daily">Four times daily</SelectItem>
-                            <SelectItem value="as_needed">As needed</SelectItem>
+                            {frequencyOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Duration</Label>
+                        <Label>Durasi</Label>
                         <Input
                           value={medication.duration}
                           onChange={(e) => updateMedication(medication.id, "duration", e.target.value)}
-                          placeholder="e.g., 7 days"
+                          placeholder="Contoh: 7 hari"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Quantity</Label>
+                        <Label>Kuantitas</Label>
                         <Input
                           value={medication.quantity}
                           onChange={(e) => updateMedication(medication.id, "quantity", e.target.value)}
-                          placeholder="e.g., 30 tablets"
+                          placeholder="Contoh: 30 tablet"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Special Instructions</Label>
+                      <Label>Instruksi Khusus</Label>
                       <Textarea
                         value={medication.instructions}
                         onChange={(e) => updateMedication(medication.id, "instructions", e.target.value)}
-                        placeholder="Take with food, avoid alcohol, etc."
+                        placeholder="Minum setelah makan, hindari alkohol, dll."
                         rows={2}
                       />
                     </div>
@@ -358,17 +368,17 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                 ))}
 
                 <Button type="button" variant="outline" onClick={addMedication} className="w-full bg-transparent">
-                  Add Another Medication
+                  <Plus className="h-4 w-4 mr-2" /> Tambah Obat Lain
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Additional Information */}
+          {/* Informasi Tambahan */}
           <div className="grid grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Prescription Details</CardTitle>
+                <CardTitle className="text-base">Detail Resep</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -376,66 +386,40 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                   <Input
                     value={diagnosis}
                     onChange={(e) => setDiagnosis(e.target.value)}
-                    placeholder="e.g., Bacterial infection"
+                    placeholder="Contoh: Infeksi Bakteri"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Prescription Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(prescriptionDate, "PPP")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={prescriptionDate}
-                        onSelect={(date) => date && setPrescriptionDate(date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Label>Tanggal Resep</Label>
+                  {/* INPUT TANGGAL NATIF */}
+                  <Input
+                    type="date"
+                    value={prescriptionDate}
+                    onChange={(e) => setPrescriptionDate(e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Valid Until</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !validUntil && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {validUntil ? format(validUntil, "PPP") : "Select expiry date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={validUntil}
-                        onSelect={setValidUntil}
-                        disabled={(date) => date < new Date()}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Label>Berlaku Sampai</Label>
+                  {/* INPUT TANGGAL NATIF */}
+                  <Input
+                    type="date"
+                    value={validUntil}
+                    onChange={(e) => setValidUntil(e.target.value)}
+                    min={prescriptionDate} // Berlaku setelah tanggal resep
+                  />
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Additional Information</CardTitle>
+                <CardTitle className="text-base">Informasi Tambahan</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Prescription Image</Label>
+                  <Label>Gambar Resep</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       type="file"
@@ -449,7 +433,7 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                       className="flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer hover:bg-muted"
                     >
                       <Upload className="h-4 w-4" />
-                      Upload Image
+                      Unggah Gambar
                     </Label>
                     {prescriptionImage && (
                       <span className="text-sm text-muted-foreground">{prescriptionImage.name}</span>
@@ -458,11 +442,11 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Additional Notes</Label>
+                  <Label>Catatan Tambahan</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Any additional notes or special considerations..."
+                    placeholder="Catatan atau pertimbangan khusus..."
                     rows={4}
                   />
                 </div>
@@ -472,14 +456,14 @@ export function PrescriptionForm({ open, onOpenChange, onSubmit }: PrescriptionF
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              Batal
             </Button>
             <Button
               type="submit"
               className=""
-              disabled={!selectedMember || !doctorName || !doctorLicense}
+              disabled={!selectedMember || !doctorName || !doctorLicense || medications.filter(med => med.name.trim() !== "").length === 0}
             >
-              Submit for Review
+              Ajukan untuk Ditinjau
             </Button>
           </DialogFooter>
         </form>

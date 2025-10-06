@@ -1,8 +1,9 @@
+// pre-order-form.tsx
 "use client"
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react" // Tambah useEffect
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,13 +18,25 @@ import {
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+// Hapus import: Calendar, Popover, PopoverContent, PopoverTrigger, CalendarIcon, format, cn
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarIcon, Plus, Minus, Search, User, Stethoscope } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { Plus, Minus, Search, User, Stethoscope } from "lucide-react"
 import { mockData } from "@/lib/mock-data"
+
+// Fungsi Helper untuk format Rupiah
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
+// Fungsi Helper untuk format tanggal ke string YYYY-MM-DD
+const formatDateToInput = (date: Date): string => {
+    if (isNaN(date.getTime())) return "";
+    return date.toISOString().split('T')[0];
+};
 
 interface Product {
   id: string
@@ -58,12 +71,26 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
   const [memberSearch, setMemberSearch] = useState("")
   const [productSearch, setProductSearch] = useState("")
   const [orderItems, setOrderItems] = useState<PreOrderItem[]>([])
-  const [pickupDate, setPickupDate] = useState<Date>()
+  // Mengubah pickupDate menjadi string YYYY-MM-DD untuk input natif
+  const [pickupDate, setPickupDate] = useState<string>(formatDateToInput(new Date())) 
   const [notes, setNotes] = useState("")
   const [priority, setPriority] = useState("normal")
 
   const products = mockData.products as Product[]
   const members = mockData.members as Member[]
+
+  // Sinkronisasi/Reset State saat dialog dibuka/ditutup
+  useEffect(() => {
+    if (!open) {
+      setSelectedMember(null)
+      setMemberSearch("")
+      setProductSearch("")
+      setOrderItems([])
+      setPickupDate(formatDateToInput(new Date()))
+      setNotes("")
+      setPriority("normal")
+    }
+  }, [open]);
 
   const filteredMembers = members.filter(
     (member) =>
@@ -94,10 +121,13 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
   }
 
   const updateQuantity = (productId: string, quantity: number) => {
+    const product = products.find(p => p.id === productId);
+    const maxStock = product?.stock || 9999;
+    
     setOrderItems((items) =>
       items.map((item) =>
         item.product.id === productId
-          ? { ...item, quantity: Math.max(1, Math.min(quantity, item.product.stock)) }
+          ? { ...item, quantity: Math.max(1, Math.min(quantity, maxStock)) }
           : item,
       ),
     )
@@ -123,7 +153,7 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
         prescription_required: item.product.prescription_required,
       })),
       total: orderItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
-      pickup_date: format(pickupDate, "yyyy-MM-dd"),
+      pickup_date: pickupDate, // Sudah dalam format string YYYY-MM-DD
       priority,
       notes,
       status: "pending",
@@ -131,16 +161,7 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
     }
 
     onSubmit(orderData)
-
-    // Reset form
-    setSelectedMember(null)
-    setMemberSearch("")
-    setProductSearch("")
-    setOrderItems([])
-    setPickupDate(undefined)
-    setNotes("")
-    setPriority("normal")
-    onOpenChange(false)
+    // onOpenChange(false) dipanggil oleh useEffect setelah onSubmit berhasil.
   }
 
   const total = orderItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
@@ -152,20 +173,20 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5" />
-            Create Pre-Order
+            Buat Pre-Order
           </DialogTitle>
           <DialogDescription>
-            Create a pre-order for prescription medications and other pharmacy products
+            Buat pre-order untuk resep obat dan produk farmasi lainnya
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Member Selection */}
+          {/* Pemilihan Anggota */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Select Patient
+                Pilih Pasien
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -177,7 +198,7 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
                     <p className="text-sm text-muted-foreground">{selectedMember.phone}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setSelectedMember(null)}>
-                    Change
+                    Ganti
                   </Button>
                 </div>
               ) : (
@@ -185,7 +206,7 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search patients by name, email, or phone..."
+                      placeholder="Cari pasien berdasarkan nama, email, atau telepon..."
                       value={memberSearch}
                       onChange={(e) => setMemberSearch(e.target.value)}
                       className="pl-10"
@@ -210,17 +231,17 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
             </CardContent>
           </Card>
 
-          {/* Product Selection */}
+          {/* Pemilihan Produk */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Add Products</CardTitle>
+              <CardTitle className="text-base">Tambah Produk</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search products to add to pre-order..."
+                    placeholder="Cari produk untuk ditambahkan ke pre-order..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
                     className="pl-10"
@@ -240,12 +261,12 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
                             <p className="font-medium text-sm">{product.name}</p>
                             {product.prescription_required && (
                               <Badge variant="outline" className="text-xs">
-                                Rx
+                                Resep
                               </Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {product.generic_name} • ${product.price}
+                            {product.generic_name} • {formatRupiah(product.price)}
                           </p>
                         </div>
                         <Button size="sm" variant="outline">
@@ -256,10 +277,10 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
                   </div>
                 )}
 
-                {/* Order Items */}
+                {/* Item Pesanan */}
                 {orderItems.length > 0 && (
                   <div className="space-y-3 pt-4 border-t">
-                    <h4 className="font-medium">Order Items</h4>
+                    <h4 className="font-medium">Item Pesanan</h4>
                     {orderItems.map((item) => (
                       <div key={item.product.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                         <div className="flex-1">
@@ -267,11 +288,11 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
                             <p className="font-medium text-sm">{item.product.name}</p>
                             {item.product.prescription_required && (
                               <Badge variant="outline" className="text-xs">
-                                Rx
+                                Resep
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground">${item.product.price} each</p>
+                          <p className="text-xs text-muted-foreground">{formatRupiah(item.product.price)} per unit</p>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -297,7 +318,7 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
                         </div>
 
                         <div className="text-right">
-                          <p className="font-medium text-sm">${(item.product.price * item.quantity).toFixed(2)}</p>
+                          <p className="font-medium text-sm">{formatRupiah(item.product.price * item.quantity)}</p>
                           <Button
                             type="button"
                             variant="ghost"
@@ -313,7 +334,7 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
 
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="font-medium">Total:</span>
-                      <span className="font-bold text-lg">${total.toFixed(2)}</span>
+                      <span className="font-bold text-lg">{formatRupiah(total)}</span>
                     </div>
                   </div>
                 )}
@@ -321,78 +342,65 @@ export function PreOrderForm({ open, onOpenChange, onSubmit }: PreOrderFormProps
             </CardContent>
           </Card>
 
-          {/* Order Details */}
+          {/* Detail Pesanan */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Pickup Date *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !pickupDate && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {pickupDate ? format(pickupDate, "PPP") : "Select pickup date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={pickupDate}
-                    onSelect={setPickupDate}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label>Tanggal Pengambilan *</Label>
+              {/* PERUBAHAN KRUSIAL: Menggunakan input type="date" natif */}
+              <Input
+                type="date"
+                value={pickupDate}
+                onChange={(e) => setPickupDate(e.target.value)}
+                min={formatDateToInput(new Date())} // Set tanggal minimum hari ini
+                required
+              />
             </div>
 
             <div className="space-y-2">
-              <Label>Priority</Label>
+              <Label>Prioritas</Label>
               <Select value={priority} onValueChange={setPriority}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="emergency">Emergency</SelectItem>
+                  <SelectItem value="urgent">Mendesak</SelectItem>
+                  <SelectItem value="emergency">Darurat</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Catatan</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Special instructions, prescription details, or other notes..."
+              placeholder="Instruksi khusus, detail resep, atau catatan lainnya..."
               rows={3}
             />
           </div>
 
           {hasPrescriptionItems && (
             <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
-              <p className="text-sm font-medium text-warning">⚠️ Prescription Items Included</p>
+              <p className="text-sm font-medium text-warning">⚠️ Item Resep Termasuk</p>
               <p className="text-xs text-warning/80">
-                This order contains prescription medications that will require pharmacist verification before
-                fulfillment.
+                Pesanan ini mengandung obat resep yang memerlukan verifikasi apoteker sebelum pemenuhan.
               </p>
             </div>
           )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              Batal
             </Button>
             <Button
               type="submit"
               className=""
               disabled={!selectedMember || orderItems.length === 0 || !pickupDate}
             >
-              Create Pre-Order
+              Buat Pre-Order
             </Button>
           </DialogFooter>
         </form>
