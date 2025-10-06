@@ -1,3 +1,4 @@
+// DashboardSidebar.tsx
 "use client"
 
 import type React from "react"
@@ -52,65 +53,65 @@ const navigationItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: "Products",
+    title: "Produk",
     href: "/dashboard/products",
     icon: Package,
   },
   {
-    title: "POS",
+    title: "Kasir (POS)",
     href: "/dashboard/pos",
     icon: ShoppingCart,
   },
   {
-    title: "Pre-Orders",
+    title: "Pre-Order",
     href: "/dashboard/pre-orders",
     icon: ClipboardList,
   },
   {
-    title: "Digital Prescription",
+    title: "Resep Digital",
     href: "/dashboard/prescriptions",
     icon: Stethoscope,
     requiredRole: "pharmacist",
   },
   {
-    title: "Members",
+    title: "Anggota",
     href: "/dashboard/members",
     icon: Users,
   },
   {
-    title: "Transactions",
+    title: "Transaksi",
     href: "/dashboard/transactions",
     icon: Receipt,
   },
   {
-    title: "Transaction History",
+    title: "Riwayat & Analitik",
     href: "/dashboard/history",
     icon: History,
   },
   {
-    title: "Branches",
+    title: "Cabang",
     href: "/dashboard/branches",
     icon: Building2,
     requiredRole: "super_admin",
   },
-  {
-    title: "Reports",
-    href: "/dashboard/reports",
-    icon: FileText,
-    requiredRole: "pharmacist",
-  },
-  {
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-    requiredRole: "super_admin",
-  },
+  // {
+  //   title: "Laporan",
+  //   href: "/dashboard/reports",
+  //   icon: FileText,
+  //   requiredRole: "pharmacist",
+  // },
+  // {
+  //   title: "Pengaturan",
+  //   href: "/dashboard/settings",
+  //   icon: Settings,
+  //   requiredRole: "super_admin",
+  // },
 ]
 
 export function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, signOut } = useAuth() // Menggunakan signOut dari useAuth
 
   if (!user) return null
 
@@ -119,8 +120,10 @@ export function DashboardSidebar() {
     return hasPermission(user.role, item.requiredRole)
   })
 
+  // FUNGSI LOGOUT DENGAN REDIRECT
   const handleSignOut = async () => {
     await signOut()
+    // Arahkan pengguna ke halaman login setelah logout
     window.location.href = "/login"
   }
 
@@ -136,11 +139,11 @@ export function DashboardSidebar() {
         {!collapsed && (
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg ">
-              <Pill className="h-5 w-5 text-white" />
+              <Pill className="h-5 w-5 text-primary" /> {/* Mengubah warna ikon */}
             </div>
             <div>
               <h1 className="font-bold text-foreground">PharmaCare</h1>
-              <p className="text-xs text-muted-foreground">Information System</p>
+              <p className="text-xs text-muted-foreground">Sistem Informasi</p>
             </div>
           </div>
         )}
@@ -149,7 +152,7 @@ export function DashboardSidebar() {
         </Button>
       </div>
 
-      {/* Navigation */}
+      {/* Navigasi */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {filteredNavItems.map((item) => {
           const isActive = pathname === item.href
@@ -160,6 +163,7 @@ export function DashboardSidebar() {
                 className={cn(
                   "w-full justify-start gap-3 h-10",
                   collapsed && "justify-center px-2",
+                  // Styling untuk item aktif
                   isActive && "bg-primary/10 text-primary hover:bg-primary/15",
                 )}
               >
@@ -176,7 +180,7 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      {/* User Profile */}
+      {/* Profil Pengguna */}
       <div className="p-2 border-t border-border">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -212,19 +216,19 @@ export function DashboardSidebar() {
             <DropdownMenuItem asChild>
               <Link href="/dashboard/profile">
                 <UserPlus className="mr-2 h-4 w-4" />
-                Profile
+                Profil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/dashboard/settings">
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                Pengaturan
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+              Keluar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
