@@ -1,3 +1,4 @@
+// stock-transfer-form.tsx
 "use client"
 
 import type React from "react"
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Minus, Search, Package, ArrowRight } from "lucide-react"
+import { Plus, Minus, Search, Package, ArrowRight, X } from "lucide-react"
 
 interface Product {
   id: string
@@ -19,6 +20,12 @@ interface Product {
   sku: string
   currentStock: number
   unit: string
+}
+
+interface Branch {
+    id: string;
+    name: string;
+    code: string;
 }
 
 interface TransferItem {
@@ -31,13 +38,24 @@ interface TransferItem {
 }
 
 interface StockTransferFormProps {
+  branches: Branch[] // Menerima data cabang
   onSubmit: (transfer: any) => void
   onCancel: () => void
 }
 
-export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps) {
+// Mock products data (asumsi stok ini adalah stok di Cabang Sumber)
+const mockProducts: Product[] = [
+    { id: "1", name: "Paracetamol 500mg", sku: "MED001", currentStock: 150, unit: "tablet" },
+    { id: "2", name: "Amoxicillin 250mg", sku: "MED002", currentStock: 80, unit: "kapsul" },
+    { id: "3", name: "Ibuprofen 400mg", sku: "MED003", currentStock: 120, unit: "tablet" },
+    { id: "4", name: "Cetirizine 10mg", sku: "MED004", currentStock: 200, unit: "tablet" },
+    { id: "5", name: "Omeprazole 20mg", sku: "MED005", currentStock: 90, unit: "kapsul" },
+]
+
+
+export function StockTransferForm({ branches, onSubmit, onCancel }: StockTransferFormProps) {
   const [formData, setFormData] = useState({
-    transferId: `TRF${Date.now()}`,
+    transferId: `TRF${String(Date.now()).slice(-6)}`,
     fromBranch: "",
     toBranch: "",
     requestedBy: "",
@@ -50,22 +68,6 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
 
-  // Mock products data
-  const mockProducts: Product[] = [
-    { id: "1", name: "Paracetamol 500mg", sku: "MED001", currentStock: 150, unit: "tablets" },
-    { id: "2", name: "Amoxicillin 250mg", sku: "MED002", currentStock: 80, unit: "capsules" },
-    { id: "3", name: "Ibuprofen 400mg", sku: "MED003", currentStock: 120, unit: "tablets" },
-    { id: "4", name: "Cetirizine 10mg", sku: "MED004", currentStock: 200, unit: "tablets" },
-    { id: "5", name: "Omeprazole 20mg", sku: "MED005", currentStock: 90, unit: "capsules" },
-  ]
-
-  const branches = [
-    { id: "1", name: "Main Branch - Makati", code: "MKT" },
-    { id: "2", name: "Quezon City Branch", code: "QC" },
-    { id: "3", name: "Pasig Branch", code: "PSG" },
-    { id: "4", name: "Taguig Branch", code: "TGG" },
-  ]
-
   const filteredProducts = mockProducts.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,31 +75,41 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
   )
 
   const addTransferItem = () => {
-    if (selectedProduct && quantity > 0) {
-      const existingItem = transferItems.find((item) => item.productId === selectedProduct.id)
+    // Validasi dasar
+    if (
+        !selectedProduct || 
+        quantity <= 0 || 
+        quantity > selectedProduct.currentStock ||
+        transferItems.some(item => item.productId === selectedProduct.id && item.quantity + quantity > item.availableStock)
+    ) return;
 
-      if (existingItem) {
+    const existingItem = transferItems.find((item) => item.productId === selectedProduct.id)
+
+    if (existingItem) {
+        // Jika item sudah ada, tambahkan kuantitas
         setTransferItems((prev) =>
-          prev.map((item) =>
-            item.productId === selectedProduct.id ? { ...item, quantity: item.quantity + quantity } : item,
-          ),
+            prev.map((item) =>
+                item.productId === selectedProduct.id 
+                ? { ...item, quantity: Math.min(item.availableStock, item.quantity + quantity) } 
+                : item,
+            ),
         )
-      } else {
+    } else {
+        // Item baru
         const newItem: TransferItem = {
-          productId: selectedProduct.id,
-          productName: selectedProduct.name,
-          sku: selectedProduct.sku,
-          quantity,
-          unit: selectedProduct.unit,
-          availableStock: selectedProduct.currentStock,
+            productId: selectedProduct.id,
+            productName: selectedProduct.name,
+            sku: selectedProduct.sku,
+            quantity: Math.min(quantity, selectedProduct.currentStock), // Batasi kuantitas
+            unit: selectedProduct.unit,
+            availableStock: selectedProduct.currentStock,
         }
         setTransferItems((prev) => [...prev, newItem])
-      }
-
-      setSelectedProduct(null)
-      setQuantity(1)
-      setSearchTerm("")
     }
+
+    setSelectedProduct(null)
+    setQuantity(1)
+    setSearchTerm("")
   }
 
   const removeTransferItem = (productId: string) => {
@@ -105,23 +117,27 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
   }
 
   const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity > 0) {
+    const itemToUpdate = transferItems.find(item => item.productId === productId);
+    if (!itemToUpdate) return;
+    
+    // Batasi kuantitas antara 1 dan stok yang tersedia
+    const safeQuantity = Math.min(Math.max(1, newQuantity), itemToUpdate.availableStock);
+    
+    if (safeQuantity > 0) {
       setTransferItems((prev) =>
-        prev.map((item) => (item.productId === productId ? { ...item, quantity: newQuantity } : item)),
+        prev.map((item) => (item.productId === productId ? { ...item, quantity: safeQuantity } : item)),
       )
     }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (transferItems.length === 0) return
+    if (transferItems.length === 0 || !formData.fromBranch || !formData.toBranch) return
 
     const transferData = {
       ...formData,
       items: transferItems,
       totalItems: transferItems.reduce((sum, item) => sum + item.quantity, 0),
-      status: "pending",
-      createdAt: new Date(),
     }
 
     onSubmit(transferData)
@@ -134,54 +150,61 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
       high: "destructive",
       urgent: "destructive",
     } as const
+    
+    const label = {
+        low: "Rendah",
+        normal: "Normal",
+        high: "Tinggi",
+        urgent: "Mendesak",
+    }[priority as keyof typeof variants] || priority;
+
 
     return (
       <Badge variant={variants[priority as keyof typeof variants] || "outline"}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+        {label}
       </Badge>
     )
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Transfer Details */}
+      {/* Detail Transfer */}
       <Card>
         <CardHeader>
-          <CardTitle>Transfer Details</CardTitle>
+          <CardTitle>Detail Transfer</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="transferId">Transfer ID</Label>
+              <Label htmlFor="transferId">ID Transfer</Label>
               <Input
                 id="transferId"
                 value={formData.transferId}
-                onChange={(e) => setFormData((prev) => ({ ...prev, transferId: e.target.value }))}
                 required
                 disabled
               />
             </div>
             <div>
-              <Label htmlFor="requestedBy">Requested By</Label>
+              <Label htmlFor="requestedBy">Diminta Oleh</Label>
               <Input
                 id="requestedBy"
                 value={formData.requestedBy}
                 onChange={(e) => setFormData((prev) => ({ ...prev, requestedBy: e.target.value }))}
                 required
-                placeholder="Enter your name"
+                placeholder="Masukkan nama Anda"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div>
-              <Label htmlFor="fromBranch">From Branch</Label>
+              <Label htmlFor="fromBranch">Dari Cabang *</Label>
               <Select
                 value={formData.fromBranch}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, fromBranch: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select source branch" />
+                  <SelectValue placeholder="Pilih cabang sumber" />
                 </SelectTrigger>
                 <SelectContent>
                   {branches.map((branch) => (
@@ -193,18 +216,18 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
               </Select>
             </div>
 
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center pt-6 md:pt-0">
               <ArrowRight className="h-6 w-6 text-muted-foreground" />
             </div>
 
             <div>
-              <Label htmlFor="toBranch">To Branch</Label>
+              <Label htmlFor="toBranch">Ke Cabang *</Label>
               <Select
                 value={formData.toBranch}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, toBranch: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select destination branch" />
+                  <SelectValue placeholder="Pilih cabang tujuan" />
                 </SelectTrigger>
                 <SelectContent>
                   {branches
@@ -221,7 +244,7 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority">Prioritas</Label>
               <Select
                 value={formData.priority}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
@@ -230,10 +253,10 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="low">Rendah</SelectItem>
                   <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="high">Tinggi</SelectItem>
+                  <SelectItem value="urgent">Mendesak</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -241,31 +264,31 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
           </div>
 
           <div>
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Catatan</Label>
             <Textarea
               id="notes"
               value={formData.notes}
               onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
               rows={3}
-              placeholder="Additional notes for this transfer..."
+              placeholder="Catatan tambahan untuk transfer ini..."
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Add Products */}
+      {/* Tambah Produk */}
       <Card>
         <CardHeader>
-          <CardTitle>Add Products to Transfer</CardTitle>
+          <CardTitle>Tambah Produk ke Transfer</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label>Search Products</Label>
+              <Label>Cari Produk</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search by name or SKU..."
+                  placeholder="Cari berdasarkan nama atau SKU..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -273,18 +296,19 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
               </div>
             </div>
             <div className="w-32">
-              <Label>Quantity</Label>
+              <Label>Kuantitas</Label>
               <Input
                 type="number"
                 min="1"
+                max={selectedProduct?.currentStock}
                 value={quantity}
                 onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
               />
             </div>
             <div className="flex items-end">
-              <Button type="button" onClick={addTransferItem} disabled={!selectedProduct}>
+              <Button type="button" onClick={addTransferItem} disabled={!selectedProduct || quantity > (selectedProduct?.currentStock || 0)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add
+                Tambah
               </Button>
             </div>
           </div>
@@ -295,7 +319,7 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
                 <div
                   key={product.id}
                   className={`p-3 cursor-pointer hover:bg-muted ${
-                    selectedProduct?.id === product.id ? "bg-muted" : ""
+                    selectedProduct?.id === product.id ? "bg-muted/70" : ""
                   }`}
                   onClick={() => setSelectedProduct(product)}
                 >
@@ -305,7 +329,7 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
                       <div className="text-sm text-muted-foreground">SKU: {product.sku}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm">Stock: {product.currentStock}</div>
+                      <div className="text-sm">Stok: {product.currentStock}</div>
                       <div className="text-xs text-muted-foreground">{product.unit}</div>
                     </div>
                   </div>
@@ -316,13 +340,13 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
         </CardContent>
       </Card>
 
-      {/* Transfer Items */}
+      {/* Item Transfer */}
       {transferItems.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Transfer Items ({transferItems.length})
+              Item Transfer ({transferItems.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -330,12 +354,12 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
+                    <TableHead>Produk</TableHead>
                     <TableHead>SKU</TableHead>
-                    <TableHead>Available Stock</TableHead>
-                    <TableHead>Transfer Quantity</TableHead>
+                    <TableHead>Stok Tersedia</TableHead>
+                    <TableHead>Kuantitas Transfer</TableHead>
                     <TableHead>Unit</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -376,10 +400,11 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
                         <Button
                           type="button"
                           variant="destructive"
-                          size="sm"
+                          size="icon"
                           onClick={() => removeTransferItem(item.productId)}
+                          title="Hapus Item"
                         >
-                          Remove
+                          <X className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -393,10 +418,13 @@ export function StockTransferForm({ onSubmit, onCancel }: StockTransferFormProps
 
       <div className="flex justify-end gap-4">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+          Batal
         </Button>
-        <Button type="submit" disabled={transferItems.length === 0 || !formData.fromBranch || !formData.toBranch}>
-          Create Transfer Request
+        <Button 
+            type="submit" 
+            disabled={transferItems.length === 0 || !formData.fromBranch || !formData.toBranch || formData.fromBranch === formData.toBranch}
+        >
+          Buat Permintaan Transfer
         </Button>
       </div>
     </form>

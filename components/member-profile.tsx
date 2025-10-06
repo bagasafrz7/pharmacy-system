@@ -1,3 +1,4 @@
+// member-profile.tsx
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,6 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { User, Phone, Mail, MapPin, Calendar, Heart, AlertTriangle, ShoppingCart, Clock, Edit } from "lucide-react"
 import { format } from "date-fns"
+import { id } from "date-fns/locale"
+
+// Fungsi Helper untuk format Rupiah
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
 
 interface Member {
   id: string
@@ -48,10 +59,11 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
       inactive: "secondary",
       suspended: "destructive",
     } as const
+    const label = status === "active" ? "Aktif" : status === "inactive" ? "Nonaktif" : "Ditangguhkan";
 
     return (
       <Badge variant={variants[status as keyof typeof variants] || "secondary"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {label}
       </Badge>
     )
   }
@@ -63,43 +75,47 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
       senior: "secondary",
       student: "outline",
     } as const
+    const label = type.charAt(0).toUpperCase() + type.slice(1);
+
 
     return (
       <Badge variant={variants[type as keyof typeof variants] || "outline"}>
-        {type.charAt(0).toUpperCase() + type.slice(1)}
+        {label === 'Senior' ? 'Lansia' : label === 'Student' ? 'Pelajar' : label}
       </Badge>
     )
   }
 
+  const age = new Date().getFullYear() - member.dateOfBirth.getFullYear();
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Profil */}
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold">
             {member.firstName} {member.lastName}
           </h2>
-          <p className="text-muted-foreground">Member ID: {member.membershipId}</p>
+          <p className="text-muted-foreground">ID Anggota: {member.membershipId}</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={onEdit}>
             <Edit className="h-4 w-4 mr-2" />
-            Edit
+            Ubah
           </Button>
           <Button variant="outline" onClick={onClose}>
-            Close
+            Tutup
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Personal Information */}
+        {/* Informasi Pribadi */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Personal Information
+                Informasi Pribadi
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -115,8 +131,7 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {format(member.dateOfBirth, "MMMM dd, yyyy")} (
-                    {new Date().getFullYear() - member.dateOfBirth.getFullYear()} years old)
+                    {format(member.dateOfBirth, "dd MMMM yyyy", { locale: id })} ({age} tahun)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -132,7 +147,7 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
               <Separator />
 
               <div>
-                <h4 className="font-medium mb-2">Emergency Contact</h4>
+                <h4 className="font-medium mb-2">Kontak Darurat</h4>
                 <div className="space-y-1 text-sm">
                   <div>{member.emergencyContact}</div>
                   <div className="text-muted-foreground">{member.emergencyPhone}</div>
@@ -143,7 +158,7 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
                 <>
                   <Separator />
                   <div>
-                    <h4 className="font-medium mb-2">Notes</h4>
+                    <h4 className="font-medium mb-2">Catatan</h4>
                     <p className="text-sm text-muted-foreground">{member.notes}</p>
                   </div>
                 </>
@@ -151,19 +166,19 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
             </CardContent>
           </Card>
 
-          {/* Medical Information */}
+          {/* Informasi Medis */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5" />
-                Medical Information
+                Informasi Medis
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
-                  Allergies
+                  Alergi
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {member.allergies.length > 0 ? (
@@ -173,13 +188,13 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-sm text-muted-foreground">No known allergies</span>
+                    <span className="text-sm text-muted-foreground">Tidak ada alergi yang diketahui</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">Medical Conditions</h4>
+                <h4 className="font-medium mb-2">Kondisi Medis</h4>
                 <div className="flex flex-wrap gap-2">
                   {member.medicalConditions.length > 0 ? (
                     member.medicalConditions.map((condition, index) => (
@@ -188,19 +203,19 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-sm text-muted-foreground">No medical conditions recorded</span>
+                    <span className="text-sm text-muted-foreground">Tidak ada kondisi medis tercatat</span>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Purchase History */}
+          {/* Riwayat Pembelian */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
-                Recent Purchase History
+                Riwayat Pembelian Terbaru
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -208,13 +223,13 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
                 {member.purchaseHistory.slice(0, 5).map((purchase) => (
                   <div key={purchase.id} className="flex justify-between items-center p-3 border rounded-lg">
                     <div>
-                      <div className="font-medium">₱{purchase.total.toLocaleString()}</div>
+                      <div className="font-medium">{formatRupiah(purchase.total)}</div>
                       <div className="text-sm text-muted-foreground">
-                        {purchase.items} items • {format(purchase.date, "MMM dd, yyyy")}
+                        {purchase.items} item • {format(purchase.date, "dd MMM yyyy", { locale: id })}
                       </div>
                     </div>
                     <Button variant="outline" size="sm">
-                      View Details
+                      Lihat Detail
                     </Button>
                   </div>
                 ))}
@@ -223,11 +238,11 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
           </Card>
         </div>
 
-        {/* Membership Summary */}
+        {/* Ringkasan Keanggotaan */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Membership Summary</CardTitle>
+              <CardTitle>Ringkasan Keanggotaan</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
@@ -235,18 +250,18 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
                 {getStatusBadge(member.status)}
               </div>
               <div className="flex justify-between items-center">
-                <span>Type</span>
+                <span>Tipe</span>
                 {getMembershipBadge(member.membershipType)}
               </div>
               <div className="flex justify-between items-center">
-                <span>Member Since</span>
-                <span className="text-sm">{format(member.joinDate, "MMM yyyy")}</span>
+                <span>Anggota Sejak</span>
+                <span className="text-sm">{format(member.joinDate, "MMM yyyy", { locale: id })}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Last Visit</span>
+                <span>Kunjungan Terakhir</span>
                 <span className="text-sm flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {format(member.lastVisit, "MMM dd, yyyy")}
+                  {format(member.lastVisit, "dd MMM yyyy", { locale: id })}
                 </span>
               </div>
             </CardContent>
@@ -254,22 +269,22 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Purchase Statistics</CardTitle>
+              <CardTitle>Statistik Pembelian</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">₱{member.totalPurchases.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">Total Purchases</div>
+                <div className="text-2xl font-bold text-primary">{formatRupiah(member.totalPurchases)}</div>
+                <div className="text-sm text-muted-foreground">Total Pembelian</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{member.purchaseHistory.length}</div>
-                <div className="text-sm text-muted-foreground">Total Transactions</div>
+                <div className="text-sm text-muted-foreground">Total Transaksi</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">
-                  ₱{Math.round(member.totalPurchases / member.purchaseHistory.length).toLocaleString()}
+                  {formatRupiah(Math.round(member.totalPurchases / member.purchaseHistory.length))}
                 </div>
-                <div className="text-sm text-muted-foreground">Average Purchase</div>
+                <div className="text-sm text-muted-foreground">Rata-rata Pembelian</div>
               </div>
             </CardContent>
           </Card>
@@ -277,25 +292,25 @@ export function MemberProfile({ member, onEdit, onClose }: MemberProfileProps) {
           {member.membershipType === "premium" && (
             <Card>
               <CardHeader>
-                <CardTitle>Premium Benefits</CardTitle>
+                <CardTitle>Keuntungan Premium</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>10% discount on all purchases</span>
+                    <span>Diskon 10% untuk semua pembelian</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Priority prescription processing</span>
+                    <span>Pemrosesan resep prioritas</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Free home delivery</span>
+                    <span>Pengiriman ke rumah gratis</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span>Health consultation discounts</span>
+                    <span>Diskon konsultasi kesehatan</span>
                   </div>
                 </div>
               </CardContent>
