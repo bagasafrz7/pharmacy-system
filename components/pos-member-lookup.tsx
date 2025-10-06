@@ -1,3 +1,4 @@
+// pos-member-lookup.tsx
 "use client"
 
 import type React from "react"
@@ -67,12 +68,12 @@ export function POSMemberLookup({ selectedMember, onSelectMember }: POSMemberLoo
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
-          Member Lookup
+          Cari Anggota
         </CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Selected Member Display */}
+        {/* Tampilan Anggota Terpilih */}
         {selectedMember ? (
           <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
             <div className="flex items-start justify-between">
@@ -90,7 +91,7 @@ export function POSMemberLookup({ selectedMember, onSelectMember }: POSMemberLoo
                 </div>
                 {selectedMember.allergies.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    <span className="text-xs text-muted-foreground">Allergies:</span>
+                    <span className="text-xs text-muted-foreground">Alergi:</span>
                     {selectedMember.allergies.map((allergy) => (
                       <Badge key={allergy} variant="destructive" className="text-xs">
                         {allergy}
@@ -100,18 +101,18 @@ export function POSMemberLookup({ selectedMember, onSelectMember }: POSMemberLoo
                 )}
               </div>
               <Button variant="outline" size="sm" onClick={() => onSelectMember(null)}>
-                Change
+                Ganti
               </Button>
             </div>
           </div>
         ) : (
           <>
-            {/* Search Input */}
+            {/* Input Pencarian */}
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Cari berdasarkan nama, email, atau telepon..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -119,13 +120,13 @@ export function POSMemberLookup({ selectedMember, onSelectMember }: POSMemberLoo
                 />
               </div>
               <Button onClick={handleSearch} disabled={searchTerm.length < 2}>
-                Search
+                Cari
               </Button>
             </div>
 
-            {/* Search Results */}
+            {/* Hasil Pencarian */}
             {isSearching ? (
-              <div className="text-center py-4 text-muted-foreground">Searching...</div>
+              <div className="text-center py-4 text-muted-foreground">Mencari...</div>
             ) : searchResults.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {searchResults.map((member) => (
@@ -140,29 +141,31 @@ export function POSMemberLookup({ selectedMember, onSelectMember }: POSMemberLoo
                         <p className="text-xs text-muted-foreground">{member.email}</p>
                         <p className="text-xs text-muted-foreground">{member.phone}</p>
                       </div>
-                      <Badge variant={member.status === "active" ? "default" : "secondary"}>{member.status}</Badge>
+                      <Badge variant={member.status === "active" ? "default" : "secondary"}>
+                        {member.status === "active" ? "Aktif" : "Nonaktif"}
+                      </Badge>
                     </div>
                   </div>
                 ))}
               </div>
             ) : searchTerm.length >= 2 ? (
               <div className="text-center py-4 text-muted-foreground">
-                <p>No members found</p>
+                <p>Anggota tidak ditemukan</p>
                 <Button variant="outline" size="sm" className="mt-2 bg-transparent">
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Add New Member
+                  Tambah Anggota Baru
                 </Button>
               </div>
             ) : null}
 
-            {/* Guest Checkout Option */}
+            {/* Opsi Checkout Tamu */}
             <div className="pt-4 border-t">
               <Button
                 variant="outline"
                 className="w-full bg-transparent"
-                onClick={() => onSelectMember({ id: "guest", name: "Guest Customer" } as Member)}
+                onClick={() => onSelectMember({ id: "guest", name: "Pelanggan Tamu" } as Member)}
               >
-                Continue as Guest
+                Lanjut sebagai Tamu
               </Button>
             </div>
           </>

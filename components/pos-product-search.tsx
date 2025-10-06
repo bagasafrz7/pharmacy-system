@@ -8,6 +8,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Search, Plus, AlertTriangle, CheckCircle } from "lucide-react"
 import { mockData } from "@/lib/mock-data"
 
+// Fungsi Helper untuk format Rupiah
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
 interface Product {
   id: string
   name: string
@@ -30,6 +39,7 @@ export function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
+  // Asumsi mockData.products sudah diformat ke Rupiah
   const products = mockData.products as Product[]
 
   useEffect(() => {
@@ -50,7 +60,7 @@ export function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
               product.brand.toLowerCase().includes(searchLower))
           )
         })
-        .slice(0, 10) // Limit results
+        .slice(0, 10) // Batasi hasil
 
       setSearchResults(filtered)
       setIsSearching(false)
@@ -61,34 +71,34 @@ export function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
 
   const getStockStatus = (product: Product) => {
     if (product.stock === 0) {
-      return { status: "out", color: "bg-destructive/10 text-destructive", icon: AlertTriangle }
+      return { status: "Habis", color: "bg-destructive/10 text-destructive", icon: AlertTriangle }
     }
     if (product.stock <= product.min_stock) {
-      return { status: "low", color: "bg-warning/10 text-warning", icon: AlertTriangle }
+      return { status: "Rendah", color: "bg-warning/10 text-warning", icon: AlertTriangle }
     }
-    return { status: "available", color: "bg-success/10 text-success", icon: CheckCircle }
+    return { status: "Tersedia", color: "bg-success/10 text-success", icon: CheckCircle }
   }
 
   return (
     <div className="space-y-4">
-      {/* Search Input */}
+      {/* Input Pencarian */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search products by name, generic name, or brand..."
+          placeholder="Cari produk berdasarkan nama, generik, atau merek..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 h-12 text-lg"
         />
       </div>
 
-      {/* Search Results */}
+      {/* Hasil Pencarian */}
       {searchTerm.length >= 2 && (
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {isSearching ? (
-            <div className="text-center py-4 text-muted-foreground">Searching...</div>
+            <div className="text-center py-4 text-muted-foreground">Mencari...</div>
           ) : searchResults.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">No products found</div>
+            <div className="text-center py-4 text-muted-foreground">Produk tidak ditemukan</div>
           ) : (
             searchResults.map((product) => {
               const stockStatus = getStockStatus(product)
@@ -103,7 +113,7 @@ export function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
                           <h3 className="font-medium text-foreground">{product.name}</h3>
                           {product.prescription_required && (
                             <Badge variant="outline" className="text-xs">
-                              Rx
+                              Resep
                             </Badge>
                           )}
                         </div>
@@ -111,10 +121,10 @@ export function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
                           {product.generic_name} • {product.brand}
                         </p>
                         <div className="flex items-center gap-4 mt-2">
-                          <span className="text-lg font-bold text-primary">${product.price}</span>
+                          <span className="text-lg font-bold text-primary">{formatRupiah(product.price)}</span>
                           <div className="flex items-center gap-1">
                             <StockIcon className="h-4 w-4" />
-                            <span className="text-sm">{product.stock} units</span>
+                            <span className="text-sm">{product.stock} unit</span>
                           </div>
                           <Badge className={stockStatus.color}>{stockStatus.status}</Badge>
                         </div>
@@ -125,7 +135,7 @@ export function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
                         className=""
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Add
+                        Tambah
                       </Button>
                     </div>
                   </CardContent>

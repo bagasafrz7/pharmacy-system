@@ -172,7 +172,7 @@ export default function TransactionsPage() {
   const completedTransactions = filteredTransactions.filter((t) => t.status === "completed").length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold">Transaction Management</h1>
         <p className="text-muted-foreground">View and manage all pharmacy transactions and sales records</p>

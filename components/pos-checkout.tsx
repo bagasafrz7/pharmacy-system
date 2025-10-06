@@ -1,3 +1,4 @@
+// pos-checkout.tsx
 "use client"
 
 import type React from "react"
@@ -19,6 +20,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { CreditCard, DollarSign, Smartphone, Receipt, Loader2 } from "lucide-react"
+
+// Fungsi Helper untuk format Rupiah
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
 
 interface CartItem {
   id: string
@@ -44,9 +54,9 @@ interface POSCheckoutProps {
 }
 
 const paymentMethods = [
-  { id: "cash", name: "Cash", icon: DollarSign },
-  { id: "card", name: "Credit/Debit Card", icon: CreditCard },
-  { id: "mobile", name: "Mobile Payment", icon: Smartphone },
+  { id: "cash", name: "Tunai", icon: DollarSign },
+  { id: "card", name: "Kartu Kredit/Debit", icon: CreditCard },
+  { id: "mobile", name: "Pembayaran Seluler", icon: Smartphone },
 ]
 
 export function POSCheckout({ open, onOpenChange, items, member, onCompleteTransaction }: POSCheckoutProps) {
@@ -56,7 +66,7 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
   const [isProcessing, setIsProcessing] = useState(false)
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const taxRate = 0.08
+  const taxRate = 0.11 // PPN 11%
   const tax = subtotal * taxRate
   const total = subtotal + tax
 
@@ -67,7 +77,7 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
     e.preventDefault()
     setIsProcessing(true)
 
-    // Simulate payment processing
+    // Simulasikan pemrosesan pembayaran
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     const transactionData = {
@@ -89,6 +99,7 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
       notes,
       status: "completed",
       created_at: new Date().toISOString(),
+      // Ini akan masuk ke list transactions di aplikasi nyata
     }
 
     onCompleteTransaction(transactionData)
@@ -110,16 +121,16 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            Complete Transaction
+            Selesaikan Transaksi
           </DialogTitle>
-          <DialogDescription>Review order details and process payment</DialogDescription>
+          <DialogDescription>Tinjau detail pesanan dan proses pembayaran</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleCompleteTransaction} className="space-y-6">
-          {/* Customer Info */}
+          {/* Info Pelanggan */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Customer Information</CardTitle>
+              <CardTitle className="text-base">Informasi Pelanggan</CardTitle>
             </CardHeader>
             <CardContent>
               {member ? (
@@ -130,19 +141,19 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
                     {member.phone && <p className="text-sm text-muted-foreground">{member.phone}</p>}
                   </div>
                   <Badge variant={member.id === "guest" ? "secondary" : "default"}>
-                    {member.id === "guest" ? "Guest" : "Member"}
+                    {member.id === "guest" ? "Tamu" : "Anggota"}
                   </Badge>
                 </div>
               ) : (
-                <p className="text-muted-foreground">No customer selected</p>
+                <p className="text-muted-foreground">Tidak ada pelanggan terpilih</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Order Summary */}
+          {/* Ringkasan Pesanan */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Order Summary</CardTitle>
+              <CardTitle className="text-base">Ringkasan Pesanan</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -152,14 +163,14 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
                       <span className="font-medium">{item.name}</span>
                       {item.prescription_required && (
                         <Badge variant="outline" className="text-xs">
-                          Rx
+                          Resep
                         </Badge>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-medium">{formatRupiah(item.price * item.quantity)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.quantity} × ${item.price}
+                        {item.quantity} × {formatRupiah(item.price)}
                       </p>
                     </div>
                   </div>
@@ -170,25 +181,25 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>{formatRupiah(subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Tax (8%):</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>Pajak (11%):</span>
+                    <span>{formatRupiah(tax)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total:</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatRupiah(total)}</span>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Payment Method */}
+          {/* Metode Pembayaran */}
           <div className="space-y-4">
-            <Label className="text-base font-medium">Payment Method</Label>
+            <Label className="text-base font-medium">Metode Pembayaran</Label>
             <div className="grid grid-cols-3 gap-3">
               {paymentMethods.map((method) => {
                 const Icon = method.icon
@@ -208,55 +219,55 @@ export function POSCheckout({ open, onOpenChange, items, member, onCompleteTrans
             </div>
           </div>
 
-          {/* Cash Payment Details */}
+          {/* Detail Pembayaran Tunai */}
           {paymentMethod === "cash" && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amount_received">Amount Received *</Label>
+                <Label htmlFor="amount_received">Jumlah Diterima (Rp) *</Label>
                 <Input
                   id="amount_received"
                   type="number"
-                  step="0.01"
+                  step="any"
                   min={total}
                   value={amountReceived}
                   onChange={(e) => setAmountReceived(e.target.value)}
-                  placeholder={`Minimum: $${total.toFixed(2)}`}
+                  placeholder={`Minimum: ${total}`}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label>Change</Label>
+                <Label>Kembalian</Label>
                 <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center">
-                  <span className="font-medium text-lg">${change.toFixed(2)}</span>
+                  <span className="font-medium text-lg">{formatRupiah(change)}</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Notes */}
+          {/* Catatan */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="notes">Catatan (Opsional)</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any notes about this transaction..."
+              placeholder="Tambahkan catatan tentang transaksi ini..."
               rows={3}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>
-              Cancel
+              Batal
             </Button>
             <Button type="submit" className="" disabled={!canComplete || isProcessing}>
               {isProcessing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  Memproses...
                 </>
               ) : (
-                `Complete Transaction - $${total.toFixed(2)}`
+                `Selesaikan Transaksi - ${formatRupiah(total)}`
               )}
             </Button>
           </DialogFooter>

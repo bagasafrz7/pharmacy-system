@@ -1,3 +1,4 @@
+// pos-cart.tsx
 "use client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -5,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react"
+
+// Fungsi Helper untuk format Rupiah
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
 
 interface CartItem {
   id: string
@@ -25,7 +35,7 @@ interface POSCartProps {
 
 export function POSCart({ items, onUpdateQuantity, onRemoveItem, onClearCart, onCheckout }: POSCartProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const taxRate = 0.08 // 8% tax
+  const taxRate = 0.11 // Asumsi PPN 11% (Indonesia)
   const tax = subtotal * taxRate
   const total = subtotal + tax
 
@@ -37,18 +47,18 @@ export function POSCart({ items, onUpdateQuantity, onRemoveItem, onClearCart, on
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5" />
-          Cart ({items.length} items)
+          Keranjang ({items.length} item)
         </CardTitle>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col">
-        {/* Cart Items */}
+        {/* Item Keranjang */}
         <div className="flex-1 space-y-3 mb-4 max-h-96 overflow-y-auto">
           {items.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Cart is empty</p>
-              <p className="text-sm">Search and add products to get started</p>
+              <p>Keranjang kosong</p>
+              <p className="text-sm">Cari dan tambahkan produk untuk memulai</p>
             </div>
           ) : (
             items.map((item) => (
@@ -58,14 +68,14 @@ export function POSCart({ items, onUpdateQuantity, onRemoveItem, onClearCart, on
                     <h4 className="font-medium text-sm">{item.name}</h4>
                     {item.prescription_required && (
                       <Badge variant="outline" className="text-xs">
-                        Rx
+                        Resep
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">${item.price} each</p>
+                  <p className="text-xs text-muted-foreground">{formatRupiah(item.price)} per unit</p>
                 </div>
 
-                {/* Quantity Controls */}
+                {/* Kontrol Kuantitas */}
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -97,9 +107,9 @@ export function POSCart({ items, onUpdateQuantity, onRemoveItem, onClearCart, on
                   </Button>
                 </div>
 
-                {/* Total & Remove */}
+                {/* Total & Hapus */}
                 <div className="text-right">
-                  <p className="font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium text-sm">{formatRupiah(item.price * item.quantity)}</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -114,41 +124,41 @@ export function POSCart({ items, onUpdateQuantity, onRemoveItem, onClearCart, on
           )}
         </div>
 
-        {/* Cart Summary */}
+        {/* Ringkasan Keranjang */}
         {hasItems && (
           <>
             <Separator className="my-4" />
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{formatRupiah(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Tax (8%):</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>Pajak (11% PPN):</span>
+                <span>{formatRupiah(tax)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatRupiah(total)}</span>
               </div>
             </div>
 
-            {/* Prescription Warning */}
+            {/* Peringatan Resep */}
             {hasPrescriptionItems && (
               <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg">
-                <p className="text-sm text-warning font-medium">⚠️ Prescription Required</p>
-                <p className="text-xs text-warning/80">Some items require valid prescription verification</p>
+                <p className="text-sm text-warning font-medium">⚠️ Diperlukan Resep</p>
+                <p className="text-xs text-warning/80">Beberapa item memerlukan verifikasi resep yang valid</p>
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Tombol Aksi */}
             <div className="mt-4 space-y-2">
               <Button onClick={onCheckout} className="w-full h-12 text-lg font-medium">
-                Proceed to Checkout
+                Lanjut ke Pembayaran
               </Button>
               <Button variant="outline" onClick={onClearCart} className="w-full bg-transparent">
-                Clear Cart
+                Kosongkan Keranjang
               </Button>
             </div>
           </>
