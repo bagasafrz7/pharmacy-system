@@ -59,34 +59,47 @@ const mockActivities: Activity[] = [
     description: "Paracetamol 500mg x2, Vitamin D3 x1",
     user: { name: "Emma Rodriguez" },
     timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-    amount: 45.98,
+    amount: 45000, // Nilai dalam Rupiah
     status: "completed",
   },
   {
     id: "2",
     type: "pre_order",
     title: translateActivityTitle("pre_order"),
-    description: "Amoxicillin 250mg - Resep diperlukan", // Terjemahkan deskripsi
+    description: "Amoxicillin 250mg - Resep diperlukan",
     user: { name: "John Smith" },
     timestamp: new Date(Date.now() - 1000 * 60 * 45), // 45 minutes ago
+    amount: 75000, // Nilai dalam Rupiah (Estimasi)
     status: "pending",
   },
   {
     id: "3",
     type: "prescription",
     title: translateActivityTitle("prescription"),
-    description: "Resep ditinjau dan disetujui untuk pasien", // Terjemahkan deskripsi
+    description: "Resep ditinjau dan disetujui untuk pasien",
     user: { name: "Dr. Michael Chen" },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+    amount: 0, // Aktivitas non-finansial
     status: "completed",
   },
   {
     id: "4",
     type: "stock_update",
     title: translateActivityTitle("stock_update"),
-    description: "Menerima kiriman baru - 50 item ditambahkan", // Terjemahkan deskripsi
+    description: "Menerima kiriman baru - 50 item ditambahkan",
     user: { name: "Dr. Sarah Johnson" },
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
+    amount: 0, // Aktivitas non-finansial
+    status: "completed",
+  },
+  {
+    id: "5",
+    type: "sale",
+    title: translateActivityTitle("sale"),
+    description: "Ibuprofen 400mg x1, Masker Wajah (Box) x1",
+    user: { name: "Dr. Sarah Johnson" },
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6), // 6 hours ago
+    amount: 55000, // Nilai dalam Rupiah
     status: "completed",
   },
 ]

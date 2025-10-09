@@ -46,10 +46,11 @@ const mockProductHistory = [
 ]
 
 const mockCustomerHistory = [
-  { customer: "Maria Santos", visits: 12, totalSpent: 2500000, lastVisit: "2024-01-20", membershipType: "premium" },
-  { customer: "Jose Dela Cruz", visits: 8, totalSpent: 1850000, lastVisit: "2024-01-18", membershipType: "regular" },
-  { customer: "Elena Rodriguez", visits: 15, totalSpent: 4200000, lastVisit: "2024-01-19", membershipType: "senior" },
-  { customer: "Miguel Torres", visits: 6, totalSpent: 850000, lastVisit: "2024-01-17", membershipType: "student" },
+  { customer: "Bagas Afrizal", visits: 12, totalSpent: 2500000, lastVisit: "2024-01-20", membershipType: "premium" },
+  { customer: "Kaka Aditya", visits: 8, totalSpent: 1850000, lastVisit: "2024-01-18", membershipType: "regular" },
+  { customer: "Saviola Dwi", visits: 15, totalSpent: 4200000, lastVisit: "2024-01-19", membershipType: "senior" },
+  { customer: "Aditya Eka Purnama", visits: 6, totalSpent: 850000, lastVisit: "2024-01-17", membershipType: "student" },
+  { customer: "Ariel Mojo", visits: 4, totalSpent: 150000, lastVisit: "2024-01-19", membershipType: "regular" },
 ]
 
 export default function HistoryPage() {

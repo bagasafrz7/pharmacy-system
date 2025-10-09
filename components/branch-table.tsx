@@ -153,7 +153,7 @@ export function BranchTable({ branches, onEdit, onView, onAdd }: BranchTableProp
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Daily Sales</span>
-                    <span className="font-semibold">₱{branch.dailySales.toLocaleString()}</span>
+                    <span className="font-semibold">{branch.dailySales.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Performance</span>

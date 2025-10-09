@@ -33,9 +33,9 @@ const formatDateToString = (date?: Date): string => {
 const mockTransactions = [
   {
     id: "TXN001",
-    date: new Date("2024-01-20T14:30:00"),
+    date: new Date("2024-10-08T14:30:00"), // Diperbarui ke tanggal sekitar saat ini
     customerId: "MEM001",
-    customerName: "Maria Santos",
+    customerName: "Bagas", // Diperbarui
     items: [
       { name: "Paracetamol 500mg", quantity: 2, price: 15000 },
       { name: "Vitamin C 500mg", quantity: 1, price: 120000 },
@@ -53,9 +53,9 @@ const mockTransactions = [
   },
   {
     id: "TXN002",
-    date: new Date("2024-01-20T15:45:00"),
+    date: new Date("2024-10-09T15:45:00"), // Diperbarui ke tanggal sekitar saat ini
     customerId: "MEM002",
-    customerName: "Jose Dela Cruz",
+    customerName: "Saviola", // Diperbarui
     items: [
       { name: "Amoxicillin 250mg", quantity: 1, price: 85000 },
       { name: "Obat Batuk Syrup", quantity: 1, price: 65000 },
@@ -73,9 +73,9 @@ const mockTransactions = [
   },
   {
     id: "TXN005",
-    date: new Date("2024-01-19T09:30:00"),
+    date: new Date("2024-10-09T09:30:00"), // Diperbarui ke tanggal sekitar saat ini
     customerId: "MEM004",
-    customerName: "Miguel Torres",
+    customerName: "Kaka Adit", // Diperbarui
     items: [
       { name: "Multivitamin", quantity: 1, price: 280000 },
       { name: "Protein Powder", quantity: 1, price: 850000 },
@@ -91,7 +91,7 @@ const mockTransactions = [
     prescriptionRequired: false,
     notes: "Pengembalian dana penuh karena produk tidak sesuai."
   },
-]
+];
 // --- Akhir Mock Data ---
 
 // --- Helper untuk Badge dan Label ---

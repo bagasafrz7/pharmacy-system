@@ -22,9 +22,9 @@ const formatRupiah = (amount: number) => {
 
 // Mock Data untuk Manajer dan Status
 const mockManagers = [
-    { id: "M1", name: "Dr. Maria Santos" },
-    { id: "M2", name: "Dr. Jose Dela Cruz" },
-    { id: "M3", name: "Dr. Elena Rodriguez" },
+    { id: "M1", name: "Dr. Maria" },
+    { id: "M2", name: "Dr. Dian" },
+    { id: "M3", name: "Dr. Budi" },
 ];
 
 const mockStatuses = [
